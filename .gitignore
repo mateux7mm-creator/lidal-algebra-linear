@@ -1,0 +1,34 @@
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build/cache diversos
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+
+# PyInstaller (executável desktop)
+build/
+dist/
+*.spec
+
+# Dados locais (modo turma)
+data/*.db
