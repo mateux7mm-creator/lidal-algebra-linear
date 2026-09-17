@@ -37,6 +37,10 @@ def main() -> None:
         # do bundle extraído (sys._MEIPASS), não um nível acima deste ficheiro.
         base_dir = sys._MEIPASS  # type: ignore[attr-defined]
         app_path = os.path.join(base_dir, "app", "streamlit_app.py")
+        # O Streamlit procura .streamlit/config.toml relativo ao diretório de
+        # trabalho atual, não a sys._MEIPASS — mudamos para lá para o tema
+        # (cores, fonte) também se aplicar dentro do executável.
+        os.chdir(base_dir)
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         app_path = os.path.join(base_dir, "..", "app", "streamlit_app.py")

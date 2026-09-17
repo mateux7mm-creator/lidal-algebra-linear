@@ -6,6 +6,7 @@ pip install -r requirements-desktop.txt
 
 pyinstaller --onefile --name LaboratorioAlgebraLinear `
   --add-data "app;app" `
+  --add-data ".streamlit;.streamlit" `
   --collect-all streamlit `
   --collect-all pkg_resources `
   desktop/run_app.py
