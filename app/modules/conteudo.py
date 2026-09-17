@@ -14,7 +14,7 @@ import sympy as sp
 import streamlit as st
 
 from utils import simbolico
-from utils.componentes import mostrar_passos
+from utils.componentes import cabecalho, mostrar_passos
 from utils.visualizacao import figura_retas_2d, figura_transformacao_parametrizada, figura_vetores_2d
 
 PASTA_CONTEUDO = Path(__file__).resolve().parent.parent / "content"
@@ -86,7 +86,7 @@ EXEMPLOS = {
 
 
 def render() -> None:
-    st.header("📖 Conteúdo")
+    cabecalho("📖 Conteúdo", "Teoria, exemplos e figuras por tópico — como um e-book.")
     nome_topico = st.selectbox("Tópico", list(TOPICOS.keys()))
     slug = TOPICOS[nome_topico]
 
@@ -94,7 +94,9 @@ def render() -> None:
     marcador = f"<!-- exemplo:{slug} -->"
     antes, _separador, depois = texto.partition(marcador)
 
+    st.divider()
     st.markdown(antes)
-    st.subheader("Exemplo resolvido")
-    EXEMPLOS[slug]()
+    with st.container(border=True):
+        st.markdown("##### 📝 Exemplo resolvido")
+        EXEMPLOS[slug]()
     st.markdown(depois)

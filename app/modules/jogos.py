@@ -12,6 +12,7 @@ import time
 import streamlit as st
 
 from utils import desafios, pontuacao
+from utils.componentes import cabecalho
 
 TOPICOS = ["Matrizes", "Determinantes", "Sistemas Lineares", "Vetores", "Valores Próprios"]
 
@@ -51,22 +52,29 @@ def _pontos_por_tempo(inicio: float) -> int:
 
 
 def render() -> None:
-    st.header("🎮 Jogos e Desafios")
+    cabecalho("🎮 Jogos e Desafios", "Pratica os conteúdos de forma gamificada, sozinho ou em turma.")
 
     with st.sidebar:
-        st.subheader("Modo turma (opcional)")
+        st.divider()
+        st.markdown("**🏫 Modo turma** (opcional)")
         st.text_input("Código de turma", key="jogos_codigo_turma")
         st.text_input("O teu nome", key="jogos_nome_jogador")
 
     pontuacoes = _pontuacao_sessao()
-    st.caption("Pontuação da sessão: " + " · ".join(f"{t}: {p}" for t, p in pontuacoes.items()))
+    with st.container(border=True):
+        st.caption("Pontuação da sessão")
+        st.markdown(" · ".join(f"**{t}**: {p}" for t, p in pontuacoes.items()))
 
-    topico = st.selectbox("Escolhe o tópico", TOPICOS)
+    col_topico, col_botao = st.columns([3, 1])
+    with col_topico:
+        topico = st.selectbox("Escolhe o tópico", TOPICOS)
+    with col_botao:
+        st.write("")
+        if st.button("🔄 Novo desafio", width="stretch"):
+            st.session_state.pop(f"jogos_quiz_{topico}", None)
+            st.session_state.pop(f"jogos_visual_{topico}", None)
 
-    if st.button("🔄 Novo desafio"):
-        st.session_state.pop(f"jogos_quiz_{topico}", None)
-        st.session_state.pop(f"jogos_visual_{topico}", None)
-
+    st.divider()
     _render_quiz(topico)
     st.divider()
     _render_visual(topico)
@@ -74,7 +82,7 @@ def render() -> None:
     codigo_turma = st.session_state.get("jogos_codigo_turma", "").strip()
     if codigo_turma:
         st.divider()
-        st.subheader(f"🏆 Ranking da turma '{codigo_turma}' — {topico}")
+        st.markdown(f"##### 🏆 Ranking da turma '{codigo_turma}' — {topico}")
         ranking = pontuacao.obter_ranking(codigo_turma, topico=topico)
         if ranking:
             st.table(ranking)
@@ -83,15 +91,16 @@ def render() -> None:
 
 
 def _render_quiz(topico: str) -> None:
-    st.subheader("Quiz rápido")
+    st.markdown("##### ⚡ Quiz rápido")
     chave = f"jogos_quiz_{topico}"
     if chave not in st.session_state:
         st.session_state[chave] = {"desafio": GERADORES_QUIZ[topico](), "inicio": time.time(), "respondido": False}
     estado = st.session_state[chave]
     desafio = estado["desafio"]
 
-    st.write(desafio.pergunta)
-    escolha = st.radio("Escolhe a resposta:", desafio.opcoes, key=f"jogos_quiz_radio_{topico}")
+    with st.container(border=True):
+        st.write(desafio.pergunta)
+        escolha = st.radio("Escolhe a resposta:", desafio.opcoes, key=f"jogos_quiz_radio_{topico}")
 
     if not estado["respondido"] and st.button("Responder", key=f"jogos_quiz_responder_{topico}"):
         estado["respondido"] = True
@@ -108,7 +117,7 @@ def _render_quiz(topico: str) -> None:
 
 
 def _render_visual(topico: str) -> None:
-    st.subheader("Desafio visual")
+    st.markdown("##### 🎯 Desafio visual")
     chave = f"jogos_visual_{topico}"
     if chave not in st.session_state:
         desafio, fig = GERADORES_VISUAL[topico]()

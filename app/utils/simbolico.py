@@ -103,12 +103,12 @@ def determinante(a: sp.Matrix) -> tuple[sp.Expr, list[Passo]]:
 
 
 def inversa(a: sp.Matrix) -> tuple[Optional[sp.Matrix], list[Passo]]:
+    """Assume que det(a) já foi calculado e mostrado (ex. via `determinante()`)
+    — não repete esse passo, só verifica singularidade e, se possível, inverte."""
     if a.shape[0] != a.shape[1]:
         raise ValueError("A inversa só está definida para matrizes quadradas.")
     det_a = a.det()
-    passos = [
-        Passo("Calcular o determinante", "", latex=f"\\det{sp.latex(a)} = {sp.latex(det_a)}"),
-    ]
+    passos: list[Passo] = []
     if det_a == 0:
         passos.append(Passo("Verificar singularidade",
                              "det(A) = 0 → a matriz não é invertível (é singular)."))

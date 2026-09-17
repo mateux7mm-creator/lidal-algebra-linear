@@ -5,6 +5,7 @@ import streamlit as st
 
 from utils import simbolico
 from utils.componentes import (
+    cabecalho,
     matriz_input,
     modo_leve_da_sessao,
     modo_passo_a_passo_ativo,
@@ -17,9 +18,13 @@ OPERACOES = ["Soma", "Produto escalar", "Produto matricial", "Transposição"]
 
 
 def render() -> None:
-    st.header("🔢 Matrizes")
-    mostrar_passo_a_passo = modo_passo_a_passo_ativo("matrizes")
-    operacao = st.selectbox("Operação", OPERACOES)
+    cabecalho("🔢 Matrizes", "Soma, produto escalar, produto matricial e transposição.")
+
+    col_opcoes, col_toggle = st.columns([2, 1])
+    with col_opcoes:
+        operacao = st.selectbox("Operação", OPERACOES)
+    with col_toggle:
+        mostrar_passo_a_passo = modo_passo_a_passo_ativo("matrizes")
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -33,7 +38,8 @@ def render() -> None:
                               valor_defeito=np.array([[0.0, 1.0], [1.0, 0.0]]))
     elif operacao == "Produto escalar":
         with col_b:
-            k = st.number_input("Escalar k", value=2.0, step=0.5)
+            st.markdown("**Escalar k**")
+            k = st.number_input("k", value=2.0, step=0.5, label_visibility="collapsed")
 
     a_sp = simbolico.para_sympy(a)
 
@@ -55,7 +61,8 @@ def render() -> None:
         mostrar_passos(passos)
 
     if operacao == "Produto escalar" and a.shape == (2, 2):
-        st.subheader("Ver o efeito de k·A em tempo real")
+        st.divider()
+        st.markdown("##### 🎬 Ver o efeito de k·A em tempo real")
         valores_k = np.linspace(-2, 2, n_frames(modo_leve_da_sessao()))
         fig = figura_transformacao_parametrizada(
             calcular_matriz=lambda t: t * a,

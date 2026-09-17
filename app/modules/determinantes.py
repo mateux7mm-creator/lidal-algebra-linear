@@ -5,6 +5,7 @@ import streamlit as st
 
 from utils import simbolico
 from utils.componentes import (
+    cabecalho,
     matriz_input,
     modo_leve_da_sessao,
     modo_passo_a_passo_ativo,
@@ -14,10 +15,14 @@ from utils.visualizacao import figura_transformacao_parametrizada, n_frames
 
 
 def render() -> None:
-    st.header("➗ Determinantes e Matriz Inversa")
-    mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
+    cabecalho("➗ Determinantes e Matriz Inversa", "Cálculo e deteção de matrizes singulares.")
 
-    dimensao = st.radio("Dimensão da matriz", [2, 3], horizontal=True)
+    col_dim, col_toggle = st.columns([2, 1])
+    with col_dim:
+        dimensao = st.radio("Dimensão da matriz", [2, 3], horizontal=True)
+    with col_toggle:
+        mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
+
     a = matriz_input("determinantes_A", linhas=dimensao, colunas=dimensao, titulo="Matriz A",
                       valor_defeito=np.array([[2.0, 1.0], [1.0, 3.0]]) if dimensao == 2
                       else np.array([[2.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]]))
@@ -26,18 +31,24 @@ def render() -> None:
     det_sp, passos_det = simbolico.determinante(a_sp)
     inversa_sp, passos_inv = simbolico.inversa(a_sp)
 
-    st.metric("Determinante", f"{float(det_sp):.4g}")
-    if inversa_sp is None:
-        st.warning("A matriz é singular (det = 0) — não tem inversa.")
-    else:
-        st.markdown("**Matriz inversa**")
-        st.latex(sp.latex(inversa_sp))
+    with st.container(border=True):
+        st.markdown("##### ✅ Resultado")
+        col_det, col_inv = st.columns(2)
+        with col_det:
+            st.metric("Determinante", f"{float(det_sp):.4g}")
+        with col_inv:
+            if inversa_sp is None:
+                st.warning("Matriz singular — não tem inversa.")
+            else:
+                st.caption("Matriz inversa")
+                st.latex(sp.latex(inversa_sp))
 
     if mostrar_passo_a_passo:
         mostrar_passos(passos_det + passos_inv)
 
     if dimensao == 2:
-        st.subheader("Ver a matriz a tornar-se singular, em tempo real")
+        st.divider()
+        st.markdown("##### 🎬 Ver a matriz a tornar-se singular, em tempo real")
         posicoes = {"a11": (0, 0), "a12": (0, 1), "a21": (1, 0), "a22": (1, 1)}
         rotulo_entrada = st.selectbox("Entrada a variar", list(posicoes.keys()), index=3)
         posicao = posicoes[rotulo_entrada]

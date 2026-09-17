@@ -2,3 +2,10 @@ streamlit>=1.37
 numpy>=1.26
 sympy>=1.12
 plotly>=5.20
+
+# Não usado diretamente pelo nosso código — é dependência transitiva de
+# st.data_editor. Fixado a <3: observámos um AttributeError intermitente
+# ("partially initialized module 'pandas'... circular import") quando o
+# pandas 3.0.x é importado pela primeira vez durante reruns rápidos do
+# Streamlit (navegação entre páginas em sucessão).
+pandas<3
