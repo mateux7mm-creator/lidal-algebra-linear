@@ -15,7 +15,15 @@ import numpy as np
 import plotly.graph_objects as go
 
 from utils import simbolico
-from utils.visualizacao import camada_clicavel, figura_retas_2d, figura_transformacao_parametrizada, figura_vetores_2d
+from utils.visualizacao import (
+    camada_clicavel,
+    figura_retas_2d,
+    figura_transformacao_parametrizada,
+    figura_vetores_2d,
+    intervalo_retas,
+    intervalo_transformacao,
+    intervalo_vetores,
+)
 
 CIDADES = ["Luanda", "Huambo", "Lobito", "Benguela", "Lubango", "Malanje"]
 
@@ -197,7 +205,7 @@ def gerar_desafio_visual_matrizes() -> tuple[DesafioVisual, go.Figure]:
         a = _matriz_aleatoria(2, -3, 3)
     ponto_esperado = (float(a[0, 0]), float(a[1, 0]))  # A aplicada a e1 = 1ª coluna de A
     fig = figura_transformacao_parametrizada(calcular_matriz=lambda t: a, valores_parametro=np.array([1.0]))
-    fig.add_trace(camada_clicavel())
+    fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
     desafio = DesafioVisual(
         instrucao="A grelha já foi transformada pela matriz A. Clica no ponto para onde o "
                   "vetor e1 = (1, 0) foi transformado (a extremidade da linha vermelha M·e1).",
@@ -215,7 +223,7 @@ def gerar_desafio_visual_determinantes() -> tuple[DesafioVisual, go.Figure]:
     vertice = (float(a[0, 0] + a[0, 1]), float(a[1, 0] + a[1, 1]))  # soma das duas colunas
     fig = figura_transformacao_parametrizada(calcular_matriz=lambda t: a, valores_parametro=np.array([1.0]),
                                               mostrar_area=True)
-    fig.add_trace(camada_clicavel())
+    fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
     desafio = DesafioVisual(
         instrucao="O paralelogramo formado pelas colunas de A está sombreado. Clica no vértice "
                   "oposto à origem (soma das duas colunas de A).",
@@ -230,8 +238,9 @@ def gerar_desafio_visual_vetores() -> tuple[DesafioVisual, go.Figure]:
     v = _vetor_aleatorio(2, -4, 4)
     w = _vetor_aleatorio(2, -4, 4)
     soma = v + w
-    fig = figura_vetores_2d([("v", v, "#e15759"), ("w", w, "#4e79a7")])
-    fig.add_trace(camada_clicavel())
+    vetores_fig = [("v", v, "#e15759"), ("w", w, "#4e79a7")]
+    fig = figura_vetores_2d(vetores_fig)
+    fig.add_trace(camada_clicavel(intervalo_vetores(vetores_fig)))
     desafio = DesafioVisual(
         instrucao="Clica no ponto onde estaria a extremidade do vetor soma v + w.",
         ponto_esperado=(float(soma[0]), float(soma[1])),
@@ -249,8 +258,9 @@ def gerar_desafio_visual_sistemas() -> tuple[DesafioVisual, go.Figure]:
             break
     b = _vetor_aleatorio(2, -6, 6)
     ponto = np.linalg.solve(a, b)
-    fig = figura_retas_2d([(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])])
-    fig.add_trace(camada_clicavel())
+    equacoes = [(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])]
+    fig = figura_retas_2d(equacoes)
+    fig.add_trace(camada_clicavel(intervalo_retas(equacoes)))
     desafio = DesafioVisual(
         instrucao="Clica no gráfico, no ponto onde as duas retas se cruzam (o ponto de interseção do sistema).",
         ponto_esperado=(float(ponto[0]), float(ponto[1])),
@@ -274,7 +284,7 @@ def gerar_desafio_visual_valores_proprios() -> tuple[DesafioVisual, go.Figure]:
         valores_parametro=np.array([1.0]),
         direcoes_proprias=[np.real(vetores[:, i]) for i in range(2)],
     )
-    fig.add_trace(camada_clicavel())
+    fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
     desafio = DesafioVisual(
         instrucao="Clica num ponto sobre a linha tracejada que corresponde à direção própria "
                   "do MAIOR valor próprio (em valor absoluto).",

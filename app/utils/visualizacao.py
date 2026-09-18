@@ -70,6 +70,28 @@ def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
     )
 
 
+def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
+    """Pequenas etiquetas "x"/"y" perto da ponta positiva de cada eixo, ao
+    estilo GeoGebra — usa anotações (não `xaxis.title`/`yaxis.title`, que ao
+    ficarem centradas ao longo do eixo sobrepunham-se ao valor "0" da grelha
+    em gráficos pequenos).
+
+    A etiqueta "x" usa `xref="paper"` (sempre a margem direita real do
+    gráfico) em vez de `xref="x"` (dados): como `scaleanchor`/`scaleratio`
+    (escala igual x/y) pode esticar o eixo x muito além de `intervalo` para
+    caber no aspeto do contentor, uma posição em coordenadas de dados como
+    `x=intervalo[1]` deixaria de estar junto à margem, ficando perto do
+    centro. O eixo y não estica (é a referência de `scaleanchor`), por isso
+    a etiqueta "y" pode usar coordenadas de dados em ambos os eixos.
+    """
+    return [
+        dict(x=0.99, xref="paper", y=0, yref="y", text="x", showarrow=False,
+             xanchor="right", yanchor="bottom", yshift=4, font=dict(size=14, color="#1f2430")),
+        dict(x=0, xref="x", y=intervalo[1], yref="y", text="y", showarrow=False,
+             xanchor="left", yanchor="top", xshift=6, font=dict(size=14, color="#1f2430")),
+    ]
+
+
 def _layout_com_slider(valores_parametro: Sequence[float], rotulo_parametro: str) -> dict:
     """Layout partilhado: eixos fixos, botões Play/Pause e slider ligados aos frames."""
     return dict(
@@ -103,6 +125,15 @@ def _layout_com_slider(valores_parametro: Sequence[float], rotulo_parametro: str
 # Vetores
 # --------------------------------------------------------------------------
 
+def intervalo_vetores(vetores: list[tuple[str, np.ndarray, str]], minimo: float = 6.0,
+                       margem: float = 1.3) -> tuple[float, float]:
+    """Domínio automático a partir da maior componente entre os vetores dados
+    (público, para os desafios dos Jogos alinharem a camada clicável)."""
+    pontos = np.array([v for _, v, _ in vetores]) if vetores else np.zeros((1, 2))
+    limite = max(minimo, float(np.abs(pontos).max()) * margem)
+    return (-limite, limite)
+
+
 def figura_vetores_2d(vetores: list[tuple[str, np.ndarray, str]], titulo: str = "") -> go.Figure:
     """vetores: lista de (nome, array 2D, cor)."""
     fig = go.Figure()
@@ -114,10 +145,9 @@ def figura_vetores_2d(vetores: list[tuple[str, np.ndarray, str]], titulo: str = 
                                   line=dict(color=cor, width=3), name=nome))
         anotacoes.append(dict(x=v[0], y=v[1], ax=0, ay=0, xref="x", yref="y", axref="x", ayref="y",
                                showarrow=True, arrowhead=3, arrowsize=1.5, arrowcolor=cor))
-    todos_pontos = np.array([v for _, v, _ in vetores]) if vetores else np.zeros((1, 2))
-    limite = max(6.0, float(np.abs(todos_pontos).max()) * 1.3)
-    fig.update_layout(title=titulo, annotations=anotacoes, showlegend=True,
-                       **_eixos_geogebra((-limite, limite)))
+    intervalo = intervalo_vetores(vetores)
+    fig.update_layout(title=titulo, annotations=anotacoes + _anotacoes_eixos(intervalo), showlegend=True,
+                       **_eixos_geogebra(intervalo))
     return fig
 
 
@@ -154,9 +184,45 @@ def _pontos_reta(a: float, b: float, c: float, intervalo=(-10, 10),
     return xs, ys
 
 
-def figura_retas_2d(equacoes: list[tuple[float, float, float]], intervalo=(-10, 10),
+def _pontos_interesse_retas(equacoes: list[tuple[float, float, float]]) -> list[tuple[float, float]]:
+    """Interceções com os eixos e pontos de interseção entre cada par de
+    retas — usados para calcular automaticamente um domínio que mostre tudo
+    o que é relevante, em vez de um intervalo fixo que pode cortar a reta."""
+    pontos = []
+    for a, b, c in equacoes:
+        if abs(a) > 1e-9:
+            pontos.append((c / a, 0.0))
+        if abs(b) > 1e-9:
+            pontos.append((0.0, c / b))
+    for i, (a1, b1, c1) in enumerate(equacoes):
+        for a2, b2, c2 in equacoes[i + 1:]:
+            matriz = np.array([[a1, b1], [a2, b2]])
+            if abs(np.linalg.det(matriz)) > 1e-9:
+                pontos.append(tuple(np.linalg.solve(matriz, [c1, c2])))
+    return pontos
+
+
+def intervalo_retas(equacoes: list[tuple[float, float, float]], minimo: float = 6.0,
+                     margem: float = 1.4) -> tuple[float, float]:
+    """Domínio automático (público, para os desafios dos Jogos alinharem a
+    camada clicável com o mesmo intervalo desta figura): maior valor absoluto
+    entre os pontos de interesse das retas, com margem — nunca mais pequeno
+    que `minimo`, para nunca cortar conteúdo relevante."""
+    pontos = _pontos_interesse_retas(equacoes)
+    if not pontos:
+        return (-minimo, minimo)
+    maior = max(minimo, float(np.abs(np.array(pontos)).max()) * margem)
+    return (-maior, maior)
+
+
+def figura_retas_2d(equacoes: list[tuple[float, float, float]], intervalo: Optional[tuple[float, float]] = None,
                      modo_leve: bool = False) -> go.Figure:
-    """equacoes: lista de (a, b, c) representando ax + by = c."""
+    """equacoes: lista de (a, b, c) representando ax + by = c.
+    Se `intervalo` não for indicado, é calculado automaticamente a partir das
+    interceções e interseções das retas, para nunca aparecer cortado."""
+    if intervalo is None:
+        intervalo = intervalo_retas(equacoes)
+
     fig = go.Figure()
     cores = CORES_VETORES
     for i, (a, b, c) in enumerate(equacoes):
@@ -164,17 +230,16 @@ def figura_retas_2d(equacoes: list[tuple[float, float, float]], intervalo=(-10, 
         fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", name=f"Eq. {i + 1}",
                                   line=dict(color=cores[i % len(cores)], width=3)))
 
-    if len(equacoes) == 2:
-        a1, b1, c1 = equacoes[0]
-        a2, b2, c2 = equacoes[1]
-        matriz = np.array([[a1, b1], [a2, b2]])
-        if abs(np.linalg.det(matriz)) > 1e-9:
-            ponto = np.linalg.solve(matriz, [c1, c2])
-            fig.add_trace(go.Scatter(x=[ponto[0]], y=[ponto[1]], mode="markers+text",
-                                      marker=dict(size=12, color="black", symbol="x"),
-                                      text=[f"({ponto[0]:.2f}, {ponto[1]:.2f})"], textposition="top center",
-                                      name="Interseção"))
-    fig.update_layout(**_eixos_geogebra(intervalo))
+    for i, (a1, b1, c1) in enumerate(equacoes):
+        for j, (a2, b2, c2) in enumerate(equacoes[i + 1:], start=i + 1):
+            matriz = np.array([[a1, b1], [a2, b2]])
+            if abs(np.linalg.det(matriz)) > 1e-9:
+                ponto = np.linalg.solve(matriz, [c1, c2])
+                fig.add_trace(go.Scatter(x=[ponto[0]], y=[ponto[1]], mode="markers+text",
+                                          marker=dict(size=10, color="black", symbol="circle"),
+                                          text=[f"({ponto[0]:.2f}, {ponto[1]:.2f})"], textposition="top center",
+                                          name=f"Interseção Eq.{i + 1}/Eq.{j + 1}"))
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo), **_eixos_geogebra(intervalo))
     return fig
 
 
@@ -227,16 +292,30 @@ def _tracos_transformacao(
     return dados
 
 
+def intervalo_transformacao(matrizes: list[np.ndarray], minimo: float = 6.0, margem: float = 1.2) -> tuple[float, float]:
+    """Maior coordenada (em valor absoluto) da grelha transformada por
+    qualquer uma das matrizes dadas, com margem — para o domínio abranger
+    sempre toda a transformação, nunca a cortar."""
+    maior = minimo
+    for m in matrizes:
+        malha_t = _malha_pontos() @ m.T
+        maior = max(maior, float(np.nanmax(np.abs(malha_t))))
+    return (-maior * margem, maior * margem)
+
+
 def figura_transformacao(
     m: np.ndarray, mostrar_area: bool = False, direcoes_proprias: Optional[list[np.ndarray]] = None,
-    intervalo: tuple[float, float] = (-6, 6), modo_leve: bool = False,
+    intervalo: Optional[tuple[float, float]] = None, modo_leve: bool = False,
 ) -> go.Figure:
     """Versão estática (sem slider/animação) da grelha 2D + círculo unitário
     transformados por M — para uso com controlo por número/setas +/- em vez
     de slider: cada rerun do Streamlit recalcula esta figura para o valor
-    atual do parâmetro. Em modo leve, a grelha e o círculo usam menos pontos."""
+    atual do parâmetro. Em modo leve, a grelha e o círculo usam menos pontos.
+    Se `intervalo` não for indicado, é calculado automaticamente a partir de M."""
+    if intervalo is None:
+        intervalo = intervalo_transformacao([m])
     fig = go.Figure(data=_tracos_transformacao(m, mostrar_area, direcoes_proprias, modo_leve))
-    fig.update_layout(**_eixos_geogebra(intervalo))
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo), **_eixos_geogebra(intervalo))
     return fig
 
 
@@ -260,9 +339,11 @@ def figura_transformacao_parametrizada(
     def frame_data(p):
         return _tracos_transformacao(calcular_matriz(p), mostrar_area, direcoes_proprias)
 
+    intervalo = intervalo_transformacao([calcular_matriz(p) for p in valores_parametro])
     fig = go.Figure(
         data=frame_data(valores_parametro[-1]),
         frames=[go.Frame(data=frame_data(p), name=str(p)) for p in valores_parametro],
     )
-    fig.update_layout(**_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra((-6, 6)))
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo),
+                       **_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra(intervalo))
     return fig

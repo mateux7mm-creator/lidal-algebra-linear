@@ -29,12 +29,15 @@ def _inicializar_estado() -> None:
     st.session_state.setdefault("sistemas_mostrar_exploracao", True)
     for i, eq in enumerate(EXEMPLO_PADRAO):
         st.session_state.setdefault(f"sistemas_eq_{i}", eq)
+        st.session_state.setdefault(f"sistemas_eq_mostrar_{i}", True)
 
 
 def _menu_equacoes() -> None:
     st.caption("Gerir as equações do sistema")
     if st.button("➕ Adicionar equação", key="sistemas_btn_add", width="stretch"):
-        st.session_state.setdefault(f"sistemas_eq_{st.session_state['sistemas_n_eq']}", "")
+        i = st.session_state["sistemas_n_eq"]
+        st.session_state.setdefault(f"sistemas_eq_{i}", "")
+        st.session_state.setdefault(f"sistemas_eq_mostrar_{i}", True)
         st.session_state["sistemas_n_eq"] += 1
     if st.button("➖ Remover última equação", key="sistemas_btn_rem", width="stretch"):
         if st.session_state["sistemas_n_eq"] > 1:
@@ -44,6 +47,7 @@ def _menu_equacoes() -> None:
         st.session_state["sistemas_n_eq"] = len(EXEMPLO_PADRAO)
         for i, eq in enumerate(EXEMPLO_PADRAO):
             st.session_state[f"sistemas_eq_{i}"] = eq
+            st.session_state[f"sistemas_eq_mostrar_{i}"] = True
 
 
 def _menu_ver() -> None:
@@ -69,9 +73,15 @@ def render() -> None:
     st.markdown("**Equações**")
     for i in range(st.session_state["sistemas_n_eq"]):
         chave = f"sistemas_eq_{i}"
+        chave_mostrar = f"sistemas_eq_mostrar_{i}"
         st.session_state.setdefault(chave, "")
-        st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: 2x + 4y = 6",
-                       label_visibility="collapsed")
+        st.session_state.setdefault(chave_mostrar, True)
+        col_eq, col_mostrar = st.columns([4, 1])
+        with col_eq:
+            st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: 2x + 4y = 6",
+                           label_visibility="collapsed")
+        with col_mostrar:
+            st.checkbox("Mostrar no gráfico", key=chave_mostrar)
 
     textos_equacoes = [st.session_state[f"sistemas_eq_{i}"] for i in range(st.session_state["sistemas_n_eq"])]
 
@@ -112,9 +122,14 @@ def render() -> None:
     if n_variaveis == 2:
         st.divider()
         st.markdown("##### 📈 Interpretação gráfica")
-        equacoes = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)]
-        st.plotly_chart(figura_retas_2d(equacoes, modo_leve=modo_leve_da_sessao()), width="stretch",
-                         key="sistemas_grafico_principal")
+        equacoes_visiveis = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)
+                              if st.session_state.get(f"sistemas_eq_mostrar_{i}", True)]
+        if equacoes_visiveis:
+            st.plotly_chart(figura_retas_2d(equacoes_visiveis, modo_leve=modo_leve_da_sessao()), width="stretch",
+                             key="sistemas_grafico_principal")
+        else:
+            st.caption("Nenhuma equação selecionada para mostrar no gráfico — "
+                       "marca a caixa \"Mostrar no gráfico\" junto de pelo menos uma equação.")
 
         if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
             st.markdown("##### 🔎 Ver a reta e a interseção a variar")
