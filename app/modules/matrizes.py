@@ -13,7 +13,7 @@ from utils.componentes import (
     mostrar_passos,
     mostrar_resultado,
 )
-from utils.visualizacao import figura_transformacao
+from utils.visualizacao import figura_transformacao_parametrizada
 
 OPERACOES_2_MATRIZES = ["Soma", "Produto matricial"]
 OPERACOES_1_MATRIZ = ["Produto escalar", "Transposição", "Escalonamento", "Inversa"]
@@ -135,5 +135,9 @@ def render() -> None:
     if operacao == "Produto escalar" and a.shape == (2, 2):
         st.divider()
         st.markdown("##### 🔎 Ver o efeito de k·A")
-        st.caption("Usa as setas do campo \"Escalar k\" acima para ver a grelha a transformar-se.")
-        st.plotly_chart(figura_transformacao(k * a, modo_leve=modo_leve_da_sessao()), width="stretch")
+        st.caption("Arrasta o slider ou carrega em ▶ Play para ver a grelha a transformar-se.")
+        fig = figura_transformacao_parametrizada(
+            lambda valor_k: valor_k * a, np.linspace(-2, 2, 30), rotulo_parametro="k",
+            modo_leve=modo_leve_da_sessao(),
+        )
+        st.plotly_chart(fig, width="stretch")

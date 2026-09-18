@@ -6,6 +6,7 @@ as ações (gerir equações, opções de visualização, exportar).
 """
 from __future__ import annotations
 
+import numpy as np
 import sympy as sp
 import streamlit as st
 
@@ -16,7 +17,7 @@ from utils.componentes import (
     modo_leve_da_sessao,
     mostrar_passos,
 )
-from utils.visualizacao import figura_retas_2d
+from utils.visualizacao import figura_retas_2d, figura_retas_2d_parametrizada
 
 EXEMPLO_PADRAO = ["x + y = 3", "x - y = 1"]
 
@@ -142,12 +143,20 @@ def render() -> None:
                 [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
             )
             indice_coef = 0 if coef_variavel.endswith(str(simbolos[0])) else 1
-            valor_coef = st.number_input(f"Valor de {coef_variavel}", value=float(a[1, indice_coef]), step=0.5)
-            linha2 = [a[1, 0], a[1, 1]]
-            linha2[indice_coef] = valor_coef
-            equacoes_exploracao = [(a[0, 0], a[0, 1], b[0]), (linha2[0], linha2[1], b[1])]
-            st.plotly_chart(figura_retas_2d(equacoes_exploracao, modo_leve=modo_leve_da_sessao()),
-                             width="stretch", key="sistemas_grafico_exploracao")
+            valor_atual = float(a[1, indice_coef])
+
+            def calcular_equacao_variavel(valor, indice_coef=indice_coef):
+                linha2 = [a[1, 0], a[1, 1]]
+                linha2[indice_coef] = valor
+                return (linha2[0], linha2[1], b[1])
+
+            st.caption("Arrasta o slider ou carrega em ▶ Play para ver a reta e a interseção a variar.")
+            fig = figura_retas_2d_parametrizada(
+                (a[0, 0], a[0, 1], b[0]), calcular_equacao_variavel,
+                np.linspace(valor_atual - 3, valor_atual + 3, 30),
+                rotulo_parametro=f"coef. de {simbolos[indice_coef]}", modo_leve=modo_leve_da_sessao(),
+            )
+            st.plotly_chart(fig, width="stretch", key="sistemas_grafico_exploracao")
         elif not sistema_2x2:
             st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
                        "2 equações e 2 incógnitas.")

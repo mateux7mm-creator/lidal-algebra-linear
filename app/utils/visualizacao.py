@@ -222,6 +222,64 @@ def figura_vetores_3d(vetores: list[tuple[str, np.ndarray, str]], titulo: str = 
     return fig
 
 
+def figura_vetor_parametrizado(
+    nome: str, calcular_vetor: Callable[[float], np.ndarray], valores_parametro: np.ndarray,
+    dimensao: int, cor: str = CORES_VETORES[0], rotulo_parametro: str = "k", modo_leve: bool = False,
+) -> go.Figure:
+    """Anima um único vetor nome = calcular_vetor(parametro) ao longo de
+    valores_parametro, em 2D ou 3D — usado pela exploração "k·v" do módulo
+    Vetores. Em 2D a seta é uma anotação (como em `figura_vetores_2d`), por
+    isso animada através do `layout` de cada frame; em 3D é um `go.Cone`
+    (uma trace normal), que anima como os outros dados."""
+    if modo_leve:
+        valores_parametro = np.linspace(valores_parametro[0], valores_parametro[-1], N_FRAMES_MODO_LEVE)
+
+    if dimensao == 3:
+        def frame_data_3d(p):
+            v = calcular_vetor(p)
+            return [
+                go.Scatter3d(x=[0, v[0]], y=[0, v[1]], z=[0, v[2]], mode="lines",
+                             line=dict(color=cor, width=6), name=nome),
+                go.Cone(x=[v[0]], y=[v[1]], z=[v[2]], u=[v[0] * 0.001], v=[v[1] * 0.001], w=[v[2] * 0.001],
+                        showscale=False, colorscale=[[0, cor], [1, cor]],
+                        sizemode="absolute", sizeref=0.3, showlegend=False),
+            ]
+        fig = go.Figure(
+            data=frame_data_3d(valores_parametro[-1]),
+            frames=[go.Frame(data=frame_data_3d(p), name=str(p)) for p in valores_parametro],
+        )
+        eixo3d = dict(gridcolor="#e3e3e3", zerolinecolor="#444444", backgroundcolor="white")
+        fig.update_layout(
+            paper_bgcolor="white", font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
+            scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d),
+            **_layout_com_slider(valores_parametro, rotulo_parametro),
+        )
+        return fig
+
+    intervalo = intervalo_vetores([(nome, calcular_vetor(p), cor) for p in valores_parametro])
+
+    def seta(p):
+        v = calcular_vetor(p)
+        return dict(x=v[0], y=v[1], ax=0, ay=0, xref="x", yref="y", axref="x", ayref="y",
+                    showarrow=True, arrowhead=3, arrowsize=1.5, arrowcolor=cor)
+
+    def frame_data_2d(p):
+        v = calcular_vetor(p)
+        return [go.Scatter(x=[0, v[0]], y=[0, v[1]], mode="lines", line=dict(color=cor, width=3), name=nome)]
+
+    fig = go.Figure(
+        data=frame_data_2d(valores_parametro[-1]),
+        frames=[go.Frame(data=frame_data_2d(p), name=str(p),
+                          layout=go.Layout(annotations=[seta(p)] + _anotacoes_eixos(intervalo)))
+                for p in valores_parametro],
+    )
+    fig.update_layout(
+        annotations=[seta(valores_parametro[-1])] + _anotacoes_eixos(intervalo),
+        **_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra(intervalo),
+    )
+    return fig
+
+
 # --------------------------------------------------------------------------
 # Sistemas Lineares
 # --------------------------------------------------------------------------
@@ -298,6 +356,48 @@ def figura_retas_2d(equacoes: list[tuple[float, float, float]], intervalo: Optio
                                           text=[f"({ponto[0]:.2f}, {ponto[1]:.2f})"], textposition="top center",
                                           name=f"Interseção Eq.{i + 1}/Eq.{j + 1}"))
     fig.update_layout(annotations=_anotacoes_eixos(intervalo), **_eixos_geogebra(intervalo))
+    return fig
+
+
+def figura_retas_2d_parametrizada(
+    equacao_fixa: tuple[float, float, float],
+    calcular_equacao_variavel: Callable[[float], tuple[float, float, float]],
+    valores_parametro: np.ndarray,
+    rotulo_parametro: str = "t",
+    modo_leve: bool = False,
+) -> go.Figure:
+    """Anima a 2ª reta (calcular_equacao_variavel(parametro)) e a sua
+    interseção com a 1ª reta fixa, ao longo de valores_parametro — usado
+    pela exploração de Sistemas Lineares (só sistemas 2×2)."""
+    if modo_leve:
+        valores_parametro = np.linspace(valores_parametro[0], valores_parametro[-1], N_FRAMES_MODO_LEVE)
+
+    intervalo = intervalo_retas([equacao_fixa] + [calcular_equacao_variavel(p) for p in valores_parametro])
+
+    def frame_data(p):
+        a2, b2, c2 = calcular_equacao_variavel(p)
+        equacoes = [equacao_fixa, (a2, b2, c2)]
+        dados = []
+        for i, (a, b, c) in enumerate(equacoes):
+            xs, ys = _pontos_reta(a, b, c, intervalo, modo_leve)
+            dados.append(go.Scatter(x=xs, y=ys, mode="lines", name=f"Eq. {i + 1}",
+                                     line=dict(color=CORES_VETORES[i % len(CORES_VETORES)], width=3)))
+        a1, b1, c1 = equacao_fixa
+        matriz = np.array([[a1, b1], [a2, b2]])
+        if abs(np.linalg.det(matriz)) > 1e-9:
+            ponto = np.linalg.solve(matriz, [c1, c2])
+            dados.append(go.Scatter(x=[ponto[0]], y=[ponto[1]], mode="markers+text",
+                                     marker=dict(size=10, color="black", symbol="circle"),
+                                     text=[f"({ponto[0]:.2f}, {ponto[1]:.2f})"], textposition="top center",
+                                     name="Interseção"))
+        return dados
+
+    fig = go.Figure(
+        data=frame_data(valores_parametro[-1]),
+        frames=[go.Frame(data=frame_data(p), name=str(p)) for p in valores_parametro],
+    )
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo),
+                       **_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra(intervalo))
     return fig
 
 

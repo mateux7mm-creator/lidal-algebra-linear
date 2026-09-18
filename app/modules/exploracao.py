@@ -6,7 +6,7 @@ from __future__ import annotations
 import streamlit as st
 
 from utils.componentes import cabecalho
-from utils.exploracao_grafica import EquacaoInvalida, interpretar_e_amostrar
+from utils.exploracao_grafica import EquacaoInvalida, detetar_parametros, interpretar_e_amostrar
 from utils.visualizacao import CORES_VETORES, figura_exploracao_grafica
 
 EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9"]
@@ -47,9 +47,13 @@ def render() -> None:
 
     col_menu, col_grafico = st.columns([1, 2.2])
 
+    textos_equacoes = [st.session_state.get(f"exploracao_eq_{i}", "")
+                        for i in range(st.session_state["exploracao_n_eq"])]
+    nomes_parametros = sorted(set().union(*(detetar_parametros(t) for t in textos_equacoes)))
+
     with col_menu:
         st.markdown("##### ✏️ Equações")
-        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)")
+        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a·x (com slider para a)")
         for i in range(st.session_state["exploracao_n_eq"]):
             chave, chave_mostrar = f"exploracao_eq_{i}", f"exploracao_eq_mostrar_{i}"
             chave_cor = f"exploracao_eq_cor_{i}"
@@ -72,17 +76,27 @@ def render() -> None:
                        disabled=st.session_state["exploracao_n_eq"] <= 1, key="exploracao_btn_rem")
         st.button("🔄 Repor exemplos", width="stretch", on_click=_repor_exemplos, key="exploracao_btn_reset")
 
+        if nomes_parametros:
+            st.markdown("##### 🎚️ Parâmetros")
+            st.caption("Letras usadas nas equações além de x/y viram sliders (estilo GeoGebra).")
+            for nome in nomes_parametros:
+                st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
+                st.slider(nome, min_value=-5.0, max_value=5.0, step=0.1, key=f"exploracao_param_{nome}")
+
+    valores_parametros = {nome: st.session_state.get(f"exploracao_param_{nome}", 1.0)
+                           for nome in nomes_parametros}
+
     with col_grafico:
         curvas, erros = [], []
-        for i in range(st.session_state["exploracao_n_eq"]):
+        for i, texto in enumerate(textos_equacoes):
             if not st.session_state.get(f"exploracao_eq_mostrar_{i}", True):
                 continue
-            texto = st.session_state.get(f"exploracao_eq_{i}", "").strip()
+            texto = texto.strip()
             if not texto:
                 continue
             cor = st.session_state.get(f"exploracao_eq_cor_{i}", CORES_VETORES[i % len(CORES_VETORES)])
             try:
-                resultado = interpretar_e_amostrar(texto)
+                resultado = interpretar_e_amostrar(texto, parametros=valores_parametros)
                 curvas.append((f"Eq. {i + 1}: {texto}", resultado, cor))
             except EquacaoInvalida as erro:
                 erros.append(f"Equação {i + 1} (\"{texto}\"): {erro}")

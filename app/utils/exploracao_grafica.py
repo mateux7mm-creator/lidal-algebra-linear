@@ -79,12 +79,10 @@ def _avaliar_real(f, valores: np.ndarray) -> np.ndarray:
     return resultado
 
 
-def interpretar_e_amostrar(
-    texto: str, intervalo: tuple[float, float] = (-10, 10), n_pontos: int = N_PONTOS_CURVA,
-) -> ResultadoEquacao:
-    """Interpreta `texto` como uma equação em x e/ou y e devolve as curvas já
-    amostradas, prontas a desenhar. Lança `EquacaoInvalida` (mensagem em
-    português, nunca uma exceção crua do SymPy) se não conseguir."""
+def _analisar_lados(texto: str) -> tuple[sp.Expr, sp.Expr]:
+    """Faz só o parsing de "lado_esq = lado_dir" (aceitando o atalho sem "="),
+    sem qualquer substituição de parâmetros — usado tanto por
+    `interpretar_e_amostrar` como por `detetar_parametros`."""
     texto = texto.strip()
     if not texto:
         raise EquacaoInvalida("Equação vazia.")
@@ -97,6 +95,39 @@ def interpretar_e_amostrar(
         expr_dir = parse_expr(lado_dir, local_dict=mapa, transformations=_TRANSFORMACOES)
     except (sp.SympifyError, SyntaxError, TypeError, AttributeError) as erro:
         raise EquacaoInvalida(f"Não consegui interpretar \"{texto}\".") from erro
+    return expr_esq, expr_dir
+
+
+def detetar_parametros(texto: str) -> set[str]:
+    """Nomes de símbolos livres na equação que não sejam x/y — tratados como
+    parâmetros com slider (estilo GeoGebra), ex. "a" em "y = a*x^2". Devolve
+    um conjunto vazio se a equação ainda não for interpretável (o utilizador
+    pode estar a meio de a escrever)."""
+    try:
+        expr_esq, expr_dir = _analisar_lados(texto)
+    except EquacaoInvalida:
+        return set()
+    livres = (expr_esq.free_symbols | expr_dir.free_symbols) - {_X, _Y}
+    return {s.name for s in livres}
+
+
+def interpretar_e_amostrar(
+    texto: str, intervalo: tuple[float, float] = (-10, 10), n_pontos: int = N_PONTOS_CURVA,
+    parametros: Optional[dict[str, float]] = None,
+) -> ResultadoEquacao:
+    """Interpreta `texto` como uma equação em x e/ou y e devolve as curvas já
+    amostradas, prontas a desenhar. Lança `EquacaoInvalida` (mensagem em
+    português, nunca uma exceção crua do SymPy) se não conseguir.
+
+    `parametros` substitui, antes de mais nada, quaisquer letras extra por um
+    valor numérico (ex. {"a": 2.0} em "y = a*x^2" dá "y = 2*x^2") — os
+    valores vêm dos sliders geridos por `detetar_parametros`."""
+    expr_esq, expr_dir = _analisar_lados(texto)
+
+    if parametros:
+        substituicoes = {sp.Symbol(nome): valor for nome, valor in parametros.items()}
+        expr_esq = expr_esq.subs(substituicoes)
+        expr_dir = expr_dir.subs(substituicoes)
 
     diferenca = sp.expand(expr_esq - expr_dir)
     simbolos_usados = diferenca.free_symbols
