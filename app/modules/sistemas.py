@@ -92,13 +92,15 @@ def render() -> None:
     n_variaveis = len(simbolos)
     a = simbolico.para_numpy(a_sp)
     b = simbolico.para_numpy(b_sp).reshape(-1)
+    n_equacoes = a.shape[0]
+    sistema_2x2 = (n_equacoes, n_variaveis) == (2, 2)
 
     solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp)
 
     with st.container(border=True):
         st.markdown("##### ✅ Resultado")
         st.markdown(f"**Solução simbólica (SymPy):** {solucoes}")
-        if n_variaveis == 2 and abs(np.linalg.det(a)) > 1e-9:
+        if sistema_2x2 and abs(np.linalg.det(a)) > 1e-9:
             solucao_numerica = np.linalg.solve(a, b)
             st.markdown(f"**Solução numérica (NumPy):** {simbolos[0]} = {solucao_numerica[0]:.4g}, "
                         f"{simbolos[1]} = {solucao_numerica[1]:.4g}")
@@ -110,10 +112,10 @@ def render() -> None:
     if n_variaveis == 2:
         st.divider()
         st.markdown("##### 📈 Interpretação gráfica")
-        equacoes = [(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])]
+        equacoes = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)]
         st.plotly_chart(figura_retas_2d(equacoes), width="stretch")
 
-        if st.session_state["sistemas_mostrar_exploracao"]:
+        if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
             st.markdown("##### 🎬 Ver a reta e a interseção a variar em tempo real")
             coef_variavel = st.selectbox(
                 "Coeficiente da 2ª equação a variar",
@@ -131,6 +133,9 @@ def render() -> None:
                 modo_leve=modo_leve_da_sessao(),
             )
             st.plotly_chart(fig_anim, width="stretch")
+        elif not sistema_2x2:
+            st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
+                       "2 equações e 2 incógnitas.")
     elif n_variaveis == 3:
         st.info("A visualização 3D da interseção de planos ficará disponível numa iteração seguinte "
                  "— a resolução simbólica acima já funciona para 3 variáveis.")
