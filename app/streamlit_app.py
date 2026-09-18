@@ -3,6 +3,7 @@ import streamlit as st
 
 from modules import conteudo, determinantes, exploracao, home, jogos, matrizes, sistemas, valores_proprios, vetores
 from utils.componentes import modo_leve_ativo
+from utils.estilo import injetar_css
 
 st.set_page_config(
     page_title="Laboratório Digital de Álgebra Linear",
@@ -10,6 +11,7 @@ st.set_page_config(
     layout="wide",
 )
 
+injetar_css()
 modo_leve_ativo()
 
 paginas = [

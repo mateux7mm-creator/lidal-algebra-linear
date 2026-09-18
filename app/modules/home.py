@@ -5,6 +5,7 @@ MODULOS = [
     ("🔢", "Matrizes", "Soma, produto escalar, produto matricial e transposição."),
     ("➗", "Determinantes / Inversa", "Cálculo e deteção de matrizes singulares."),
     ("📐", "Sistemas Lineares", "Resolução e interpretação gráfica."),
+    ("🧭", "Exploração Gráfica", "Gráficos de equações livres, estilo GeoGebra."),
     ("➡️", "Vetores", "Operações e visualização 2D/3D."),
     ("🌀", "Valores/Vetores Próprios", "Cálculo e visualização da transformação."),
     ("🎮", "Jogos e Desafios", "Pratica os conteúdos de forma gamificada."),
