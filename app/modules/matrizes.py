@@ -1,4 +1,5 @@
-"""Módulo Matrizes: soma, produto escalar, produto matricial, transposição."""
+"""Módulo Matrizes: soma, produto escalar, produto matricial, transposição,
+escalonamento e inversa — sobre um número arbitrário de matrizes nomeadas."""
 import numpy as np
 import sympy as sp
 import streamlit as st
@@ -14,44 +15,109 @@ from utils.componentes import (
 )
 from utils.visualizacao import figura_transformacao_parametrizada, n_frames
 
-OPERACOES = ["Soma", "Produto escalar", "Produto matricial", "Transposição"]
+OPERACOES_2_MATRIZES = ["Soma", "Produto matricial"]
+OPERACOES_1_MATRIZ = ["Produto escalar", "Transposição", "Escalonamento", "Inversa"]
+TODAS_OPERACOES = OPERACOES_2_MATRIZES + OPERACOES_1_MATRIZ
+
+VALORES_DEFEITO = {
+    "A": np.array([[1.0, 2.0], [3.0, 4.0]]),
+    "B": np.array([[0.0, 1.0], [1.0, 0.0]]),
+}
+
+
+def _inicializar_estado() -> None:
+    st.session_state.setdefault("matrizes_nomes", ["A", "B"])
+
+
+def _adicionar_matriz() -> None:
+    nomes = st.session_state["matrizes_nomes"]
+    nomes.append(chr(ord("A") + len(nomes)))
+
+
+def _remover_ultima_matriz() -> None:
+    nomes = st.session_state["matrizes_nomes"]
+    if len(nomes) > 1:
+        nome_removido = nomes.pop()
+        for sufixo in ("_dados", "_versao"):
+            st.session_state.pop(f"matrizes_{nome_removido}{sufixo}", None)
 
 
 def render() -> None:
-    cabecalho("🔢 Matrizes", "Soma, produto escalar, produto matricial e transposição.")
+    cabecalho("🔢 Matrizes",
+              "Soma, produto escalar, produto matricial, transposição, escalonamento e inversa.")
+    _inicializar_estado()
 
-    col_opcoes, col_toggle = st.columns([2, 1])
-    with col_opcoes:
-        operacao = st.selectbox("Operação", OPERACOES)
+    col_add, col_rem = st.columns(2)
+    with col_add:
+        st.button("➕ Adicionar matriz", width="stretch", on_click=_adicionar_matriz)
+    with col_rem:
+        st.button("➖ Remover última matriz", width="stretch", on_click=_remover_ultima_matriz,
+                   disabled=len(st.session_state["matrizes_nomes"]) <= 1)
+
+    nomes = st.session_state["matrizes_nomes"]
+    matrizes: dict[str, np.ndarray] = {}
+    for nome in nomes:
+        matrizes[nome] = matriz_input(f"matrizes_{nome}", titulo=f"Matriz {nome}",
+                                       valor_defeito=VALORES_DEFEITO.get(nome))
+
+    st.divider()
+    col_operacao, col_toggle = st.columns([2, 1])
+    with col_operacao:
+        operacao = st.selectbox("Escolher operação", TODAS_OPERACOES)
     with col_toggle:
         mostrar_passo_a_passo = modo_passo_a_passo_ativo("matrizes")
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        a = matriz_input("matrizes_A", titulo="Matriz A",
-                          valor_defeito=np.array([[1.0, 2.0], [3.0, 4.0]]))
-    b = None
-    k = 1.0
-    if operacao in ("Soma", "Produto matricial"):
-        with col_b:
-            b = matriz_input("matrizes_B", titulo="Matriz B",
-                              valor_defeito=np.array([[0.0, 1.0], [1.0, 0.0]]))
-    elif operacao == "Produto escalar":
-        with col_b:
+    k = None
+    if operacao in OPERACOES_2_MATRIZES:
+        if len(nomes) < 2:
+            st.warning("Esta operação precisa de pelo menos 2 matrizes — adiciona outra acima.")
+            return
+        col1, col2 = st.columns(2)
+        with col1:
+            nome_a = st.selectbox("Matriz 1", nomes, index=0, key="matrizes_op_nome1")
+        with col2:
+            nome_b = st.selectbox("Matriz 2", nomes, index=min(1, len(nomes) - 1), key="matrizes_op_nome2")
+        a, b = matrizes[nome_a], matrizes[nome_b]
+    else:
+        nome_a = st.selectbox("Matriz", nomes, key="matrizes_op_nome_unica")
+        a, b = matrizes[nome_a], None
+        if operacao == "Produto escalar":
             st.markdown("**Escalar k**")
             k = st.number_input("k", value=2.0, step=0.5, label_visibility="collapsed")
 
-    a_sp = simbolico.para_sympy(a)
+    with st.container(border=True):
+        st.markdown("##### 🔎 Operandos escolhidos")
+        if b is not None:
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.caption(f"Matriz {nome_a}")
+                st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
+            with col_b:
+                st.caption(f"Matriz {nome_b}")
+                st.latex(sp.latex(sp.Matrix(np.round(b, 4).tolist())))
+        else:
+            st.caption(f"Matriz {nome_a}")
+            st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
 
+    a_sp = simbolico.para_sympy(a)
     try:
         if operacao == "Soma":
             resultado_sp, passos = simbolico.somar_matrizes(a_sp, simbolico.para_sympy(b))
-        elif operacao == "Produto escalar":
-            resultado_sp, passos = simbolico.multiplicar_escalar(k, a_sp)
         elif operacao == "Produto matricial":
             resultado_sp, passos = simbolico.multiplicar_matrizes(a_sp, simbolico.para_sympy(b))
-        else:  # Transposição
+        elif operacao == "Produto escalar":
+            resultado_sp, passos = simbolico.multiplicar_escalar(k, a_sp)
+        elif operacao == "Transposição":
             resultado_sp, passos = simbolico.transpor(a_sp)
+        elif operacao == "Escalonamento":
+            resultado_sp, passos = simbolico.escalonar(a_sp)
+        else:  # Inversa
+            resultado_sp, passos = simbolico.inversa(a_sp)
+            if resultado_sp is None:
+                st.warning("A matriz é singular (det = 0) — não tem inversa.")
+                if mostrar_passo_a_passo:
+                    mostrar_passos(passos)
+                return
     except ValueError as erro:
         st.error(str(erro))
         return

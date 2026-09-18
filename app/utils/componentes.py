@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Callable
 
 import numpy as np
+import pandas as pd
 import sympy as sp
 import streamlit as st
 
@@ -50,20 +51,63 @@ def _config_colunas_numericas(n_colunas: int) -> dict:
 
 
 def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "Matriz",
-                  valor_defeito: np.ndarray | None = None) -> np.ndarray:
-    """Editor de células para uma matriz linhas×colunas, devolvendo um numpy.ndarray."""
-    if valor_defeito is None or valor_defeito.shape != (linhas, colunas):
-        valor_defeito = np.eye(max(linhas, colunas))[:linhas, :colunas]
+                  valor_defeito: np.ndarray | None = None, permitir_redimensionar: bool = True) -> np.ndarray:
+    """Editor de células para uma matriz, com rótulos "1ª linha"/"1ª coluna",
+    pré-visualização simbólica ao vivo, e (se `permitir_redimensionar`) botões
+    para adicionar/remover linhas e colunas. Devolve um numpy.ndarray."""
+    chave_dados = f"{chave}_dados"
+    chave_versao = f"{chave}_versao"
+    if chave_dados not in st.session_state:
+        if valor_defeito is None or valor_defeito.shape != (linhas, colunas):
+            valor_defeito = np.eye(max(linhas, colunas))[:linhas, :colunas]
+        st.session_state[chave_dados] = valor_defeito.astype(float)
+        st.session_state[chave_versao] = 0
+
+    dados = st.session_state[chave_dados]
+    n_linhas, n_colunas = dados.shape
+
     with st.container(border=True):
-        st.markdown(f"**{titulo}** · {linhas}×{colunas}")
-        editado = st.data_editor(
-            valor_defeito,
-            key=f"{chave}_{linhas}x{colunas}",
-            num_rows="fixed",
-            hide_index=True,
-            column_config=_config_colunas_numericas(colunas),
+        col_titulo, col_botoes = st.columns([2, 3])
+        with col_titulo:
+            st.markdown(f"**{titulo}** · {n_linhas}×{n_colunas}")
+        if permitir_redimensionar:
+            with col_botoes:
+                c1, c2, c3, c4 = st.columns(4)
+                if c1.button("➕ Linha", key=f"{chave}_add_l", width="stretch"):
+                    st.session_state[chave_dados] = np.vstack([dados, np.zeros((1, n_colunas))])
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+                if c2.button("➕ Coluna", key=f"{chave}_add_c", width="stretch"):
+                    st.session_state[chave_dados] = np.hstack([dados, np.zeros((n_linhas, 1))])
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+                if c3.button("➖ Linha", key=f"{chave}_rem_l", width="stretch", disabled=n_linhas <= 1):
+                    st.session_state[chave_dados] = dados[:-1, :]
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+                if c4.button("➖ Coluna", key=f"{chave}_rem_c", width="stretch", disabled=n_colunas <= 1):
+                    st.session_state[chave_dados] = dados[:, :-1]
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+
+        df = pd.DataFrame(
+            dados,
+            index=[f"{i + 1}ª linha" for i in range(n_linhas)],
+            columns=[f"{i + 1}ª coluna" for i in range(n_colunas)],
         )
-    return np.array(editado, dtype=float)
+        chave_editor = f"{chave}_editor_{st.session_state[chave_versao]}"
+        editado = st.data_editor(
+            df,
+            key=chave_editor,
+            num_rows="fixed",
+            column_config={c: st.column_config.NumberColumn(format="%.2f") for c in df.columns},
+        )
+        matriz = np.array(editado, dtype=float)
+        st.session_state[chave_dados] = matriz
+
+        st.caption("Forma simbólica")
+        st.latex(sp.latex(sp.Matrix(np.round(matriz, 4).tolist())))
+    return matriz
 
 
 def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",

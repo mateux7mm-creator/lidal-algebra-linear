@@ -94,6 +94,38 @@ def transpor(a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
     return resultado, passos
 
 
+def escalonar(a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
+    """Eliminação de Gauss até à forma escalonada (não reduzida), mostrando
+    cada operação de linha — ao contrário de `.rref()`, que só devolve o
+    resultado final."""
+    m = a.copy()
+    n_linhas, n_colunas = m.shape
+    passos = [Passo("Matriz inicial", "", latex=sp.latex(m))]
+    linha_pivo = 0
+    for col in range(n_colunas):
+        if linha_pivo >= n_linhas:
+            break
+        if m[linha_pivo, col] == 0:
+            candidato = next((r for r in range(linha_pivo + 1, n_linhas) if m[r, col] != 0), None)
+            if candidato is None:
+                continue
+            m.row_swap(linha_pivo, candidato)
+            passos.append(Passo(f"Trocar L{linha_pivo + 1} com L{candidato + 1}",
+                                 "Para obter um pivô não-nulo nesta coluna.", latex=sp.latex(m)))
+        pivo = m[linha_pivo, col]
+        for r in range(linha_pivo + 1, n_linhas):
+            if m[r, col] != 0:
+                fator = sp.nsimplify(m[r, col] / pivo)
+                m[r, :] = m[r, :] - fator * m[linha_pivo, :]
+                passos.append(Passo(
+                    f"L{r + 1} ← L{r + 1} − ({sp.latex(fator)})·L{linha_pivo + 1}",
+                    "Anular a entrada abaixo do pivô.", latex=sp.latex(m),
+                ))
+        linha_pivo += 1
+    passos.append(Passo("Forma escalonada obtida", "", latex=sp.latex(m)))
+    return m, passos
+
+
 # --------------------------------------------------------------------------
 # Determinantes e Inversa
 # --------------------------------------------------------------------------
