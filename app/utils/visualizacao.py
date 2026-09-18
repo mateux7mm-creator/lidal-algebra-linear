@@ -99,15 +99,31 @@ def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
     Os números estendem-se até FATOR_EXTENSAO_MARCAS× o intervalo pedido
     (menos que o FATOR_EXTENSAO das retas/malha, para não gerar demasiadas
     anotações), para continuarem a aparecer num zoom-out moderado.
+
+    Cada eixo termina numa seta (estilo GeoGebra), desenhada com o mesmo
+    truque de anotação usado nos vetores (`showarrow=True, ax/ay` = cauda,
+    `x/y` = ponta). A seta do eixo x também usa `xref="paper"` pela mesma
+    razão da etiqueta "x": só a coordenada de papel garante a ponta na
+    margem direita real, independentemente do esticamento por `scaleanchor`.
     """
     FATOR_EXTENSAO_MARCAS = 2
     dtick = _dtick_legivel(intervalo[1] - intervalo[0])
     maximo = intervalo[1] * FATOR_EXTENSAO_MARCAS
+    cor_eixo = "#444444"
 
     anotacoes = [
-        dict(x=0.99, xref="paper", y=0, yref="y", text="x", showarrow=False,
+        # seta na ponta do eixo x (margem direita real; "x domain" é o único
+        # valor de axref que suporta uma referência tipo "paper", pois axref
+        # não aceita "paper" diretamente — só xref, que é usado na etiqueta "x")
+        dict(x=0.995, xref="x domain", ax=0.93, axref="x domain", y=0, yref="y", ay=0, ayref="y",
+             text="", showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.6, arrowcolor=cor_eixo),
+        # seta na ponta do eixo y (o eixo y não estica, coordenadas de dados são fiáveis)
+        dict(x=0, xref="x", y=intervalo[1] * 0.99, yref="y",
+             ax=0, axref="x", ay=intervalo[1] * 0.82, ayref="y",
+             text="", showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.6, arrowcolor=cor_eixo),
+        dict(x=0.9, xref="paper", y=0, yref="y", text="x", showarrow=False,
              xanchor="right", yanchor="bottom", yshift=4, font=dict(size=14, color="#1f2430")),
-        dict(x=0, xref="x", y=intervalo[1], yref="y", text="y", showarrow=False,
+        dict(x=0, xref="x", y=intervalo[1] * 0.82, yref="y", text="y", showarrow=False,
              xanchor="left", yanchor="top", xshift=6, font=dict(size=14, color="#1f2430")),
         dict(x=0, xref="x", y=0, yref="y", text="0", showarrow=False,
              xanchor="right", yanchor="top", xshift=-4, yshift=-4,
