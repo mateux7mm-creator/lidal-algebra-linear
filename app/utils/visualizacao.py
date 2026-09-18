@@ -13,7 +13,9 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 import plotly.graph_objects as go
 
-GRID_INTERVALO = 2  # malha de -2 a 2
+GRID_INTERVALO = 2  # malha de -2 a 2 — usada para calcular o domínio inicial da vista
+FATOR_EXTENSAO = 4  # a malha/retas desenhadas são FATOR_EXTENSAO× maiores que a vista
+                     # inicial, para dar zoom-out não revelar espaço vazio a meio da reta/grelha
 GRID_PASSO = 0.5
 GRID_PASSO_LEVE = 1.0
 N_PONTOS_CIRCULO = 60
@@ -28,17 +30,19 @@ CORES_VETORES = ["#e15759", "#4e79a7", "#59a14f", "#f28e2b", "#b07aa1"]
 # Utilitários internos
 # --------------------------------------------------------------------------
 
-def _malha_pontos(modo_leve: bool = False) -> np.ndarray:
+def _malha_pontos(modo_leve: bool = False, intervalo_malha: float = GRID_INTERVALO) -> np.ndarray:
     """Grelha de linhas horizontais/verticais como pontos 2D, separadas por NaN.
     Em modo leve, usa um espaçamento maior (menos linhas) — mais rápido de
-    desenhar em dispositivos/ligações mais fracas."""
-    passo = GRID_PASSO_LEVE if modo_leve else GRID_PASSO
-    valores = np.arange(-GRID_INTERVALO, GRID_INTERVALO + passo, passo)
+    desenhar em dispositivos/ligações mais fracas. `intervalo_malha` maior que
+    `GRID_INTERVALO` estende a malha para além da vista inicial (mesmo nº de
+    linhas, cada uma mais longa), para o zoom-out não a cortar."""
+    passo = (GRID_PASSO_LEVE if modo_leve else GRID_PASSO) * (intervalo_malha / GRID_INTERVALO)
+    valores = np.arange(-intervalo_malha, intervalo_malha + passo, passo)
     pontos = []
     for v in valores:
-        pontos += [(-GRID_INTERVALO, v), (GRID_INTERVALO, v), (np.nan, np.nan)]
+        pontos += [(-intervalo_malha, v), (intervalo_malha, v), (np.nan, np.nan)]
     for v in valores:
-        pontos += [(v, -GRID_INTERVALO), (v, GRID_INTERVALO), (np.nan, np.nan)]
+        pontos += [(v, -intervalo_malha), (v, intervalo_malha), (np.nan, np.nan)]
     return np.array(pontos)
 
 
@@ -173,14 +177,17 @@ def figura_vetores_3d(vetores: list[tuple[str, np.ndarray, str]], titulo: str = 
 
 def _pontos_reta(a: float, b: float, c: float, intervalo=(-10, 10),
                   modo_leve: bool = False) -> tuple[np.ndarray, np.ndarray]:
-    """Pontos (x, y) da reta ax + by = c dentro do intervalo dado."""
+    """Pontos (x, y) da reta ax + by = c, gerados num intervalo FATOR_EXTENSAO×
+    maior que `intervalo` (a vista inicial) — para que, ao dar zoom-out, a
+    reta continue visível em vez de acabar exatamente na margem da vista."""
     n = N_PONTOS_RETA_LEVE if modo_leve else N_PONTOS_RETA
-    xs = np.linspace(*intervalo, n)
+    ampliado = (intervalo[0] * FATOR_EXTENSAO, intervalo[1] * FATOR_EXTENSAO)
+    xs = np.linspace(*ampliado, n)
     if abs(b) > 1e-9:
         ys = (c - a * xs) / b
     else:
         xs = np.full(n, c / a) if abs(a) > 1e-9 else xs
-        ys = np.linspace(*intervalo, n)
+        ys = np.linspace(*ampliado, n)
     return xs, ys
 
 
@@ -264,8 +271,10 @@ def _tracos_transformacao(
 ) -> list[go.Scatter]:
     """Traços de uma grelha 2D + círculo unitário transformados pela matriz M
     — partilhado entre a versão estática (`figura_transformacao`) e a
-    animada (`figura_transformacao_parametrizada`)."""
-    malha_t = _malha_pontos(modo_leve) @ m.T
+    animada (`figura_transformacao_parametrizada`). A malha usa
+    `intervalo_malha` estendido (FATOR_EXTENSAO×) para o zoom-out não a
+    cortar; o círculo unitário não precisa disso, é uma curva fechada."""
+    malha_t = _malha_pontos(modo_leve, intervalo_malha=GRID_INTERVALO * FATOR_EXTENSAO) @ m.T
     circulo_t = _circulo_pontos(modo_leve) @ m.T
     dados = [
         go.Scatter(x=malha_t[:, 0], y=malha_t[:, 1], mode="lines",
