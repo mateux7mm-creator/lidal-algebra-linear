@@ -12,7 +12,7 @@ from utils.componentes import (
     modo_passo_a_passo_ativo,
     mostrar_passos,
 )
-from utils.visualizacao import figura_transformacao_parametrizada, n_frames
+from utils.visualizacao import figura_transformacao
 
 VALORES_DEFEITO = {"A": np.array([[2.0, 0.0], [0.0, 3.0]])}
 
@@ -83,20 +83,17 @@ def render() -> None:
 
     if a.shape == (2, 2):
         st.divider()
-        st.markdown("##### 🎬 Ver a transformação a construir-se em tempo real")
+        st.markdown("##### 🔎 Ver a transformação a construir-se")
         valores_np, vetores_np = np.linalg.eig(a)
         direcoes = []
         for i in range(len(valores_np)):
             if abs(valores_np[i].imag) < 1e-9:
                 direcoes.append(np.real(vetores_np[:, i]))
-        valores_t = np.linspace(0, 1, n_frames(modo_leve_da_sessao()))
-        fig = figura_transformacao_parametrizada(
-            calcular_matriz=lambda t: (1 - t) * np.eye(2) + t * a,
-            valores_parametro=valores_t,
-            rotulo_parametro="t",
-            direcoes_proprias=direcoes or None,
-            modo_leve=modo_leve_da_sessao(),
-        )
+        t = st.number_input("t (0 = identidade, 1 = matriz completa)", value=1.0,
+                             min_value=0.0, max_value=1.0, step=0.1)
+        matriz_t = (1 - t) * np.eye(2) + t * a
+        fig = figura_transformacao(matriz_t, direcoes_proprias=direcoes or None,
+                                    modo_leve=modo_leve_da_sessao())
         st.plotly_chart(fig, width="stretch")
     else:
         st.info("A visualização gráfica 3×3 ficará disponível numa iteração seguinte "

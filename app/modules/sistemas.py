@@ -17,7 +17,7 @@ from utils.componentes import (
     modo_leve_da_sessao,
     mostrar_passos,
 )
-from utils.visualizacao import figura_retas_2d, figura_sistema_2d_animado, n_frames
+from utils.visualizacao import figura_retas_2d
 
 EXEMPLO_PADRAO = ["x + y = 3", "x - y = 1"]
 
@@ -113,26 +113,22 @@ def render() -> None:
         st.divider()
         st.markdown("##### 📈 Interpretação gráfica")
         equacoes = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)]
-        st.plotly_chart(figura_retas_2d(equacoes), width="stretch")
+        st.plotly_chart(figura_retas_2d(equacoes, modo_leve=modo_leve_da_sessao()), width="stretch",
+                         key="sistemas_grafico_principal")
 
         if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
-            st.markdown("##### 🎬 Ver a reta e a interseção a variar em tempo real")
+            st.markdown("##### 🔎 Ver a reta e a interseção a variar")
             coef_variavel = st.selectbox(
                 "Coeficiente da 2ª equação a variar",
                 [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
             )
-            valores = np.linspace(-3, 3, n_frames(modo_leve_da_sessao()))
-            if coef_variavel.endswith(str(simbolos[0])):
-                calcular_eq = lambda p: (p, a[1, 1], b[1])
-            else:
-                calcular_eq = lambda p: (a[1, 0], p, b[1])
-            fig_anim = figura_sistema_2d_animado(
-                equacao_fixa=(a[0, 0], a[0, 1], b[0]),
-                calcular_equacao_variavel=calcular_eq,
-                valores_parametro=valores,
-                modo_leve=modo_leve_da_sessao(),
-            )
-            st.plotly_chart(fig_anim, width="stretch")
+            indice_coef = 0 if coef_variavel.endswith(str(simbolos[0])) else 1
+            valor_coef = st.number_input(f"Valor de {coef_variavel}", value=float(a[1, indice_coef]), step=0.5)
+            linha2 = [a[1, 0], a[1, 1]]
+            linha2[indice_coef] = valor_coef
+            equacoes_exploracao = [(a[0, 0], a[0, 1], b[0]), (linha2[0], linha2[1], b[1])]
+            st.plotly_chart(figura_retas_2d(equacoes_exploracao, modo_leve=modo_leve_da_sessao()),
+                             width="stretch", key="sistemas_grafico_exploracao")
         elif not sistema_2x2:
             st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
                        "2 equações e 2 incógnitas.")

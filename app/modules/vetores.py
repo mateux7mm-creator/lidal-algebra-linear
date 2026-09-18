@@ -6,13 +6,12 @@ import streamlit as st
 
 from utils.componentes import (
     cabecalho,
-    modo_leve_da_sessao,
     modo_passo_a_passo_ativo,
     mostrar_passos,
     vetor_input,
 )
 from utils.simbolico import Passo
-from utils.visualizacao import figura_vetor_escalado, figura_vetores_2d, figura_vetores_3d, n_frames
+from utils.visualizacao import figura_vetores_2d, figura_vetores_3d
 
 OPERACOES_2_VETORES = ["Soma", "Produto interno", "Produto externo", "Teste de ortogonalidade"]
 OPERACOES_1_VETOR = ["Norma"]
@@ -138,9 +137,12 @@ def render() -> None:
     st.markdown("##### 📈 Visualização")
     vetores_fig = [(nome, vetores[nome], CORES[i % len(CORES)]) for i, nome in enumerate(nomes)]
     fig = figura_vetores_2d(vetores_fig) if dimensao == 2 else figura_vetores_3d(vetores_fig)
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, width="stretch", key="vetores_grafico_principal")
 
-    st.markdown(f"##### 🎬 Ver k·{nome_v} em tempo real")
-    valores_k = np.linspace(-2, 2, n_frames(modo_leve_da_sessao()))
-    fig_anim = figura_vetor_escalado(v, valores_k, modo_leve=modo_leve_da_sessao())
-    st.plotly_chart(fig_anim, width="stretch")
+    st.markdown(f"##### 🔎 Ver k·{nome_v}")
+    k_exploracao = st.number_input(f"k (escalar aplicado a {nome_v})", value=1.0, step=0.5,
+                                    key="vetores_k_explorar")
+    nome_kv = f"{k_exploracao:g}·{nome_v}"
+    fig_kv = figura_vetores_2d([(nome_kv, k_exploracao * v, CORES[0])]) if dimensao == 2 \
+        else figura_vetores_3d([(nome_kv, k_exploracao * v, CORES[0])])
+    st.plotly_chart(fig_kv, width="stretch", key="vetores_grafico_kv")

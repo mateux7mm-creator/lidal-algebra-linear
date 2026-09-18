@@ -12,7 +12,7 @@ from utils.componentes import (
     modo_passo_a_passo_ativo,
     mostrar_passos,
 )
-from utils.visualizacao import figura_transformacao_parametrizada, n_frames
+from utils.visualizacao import figura_transformacao
 
 VALORES_DEFEITO = {"A": np.array([[2.0, 1.0], [1.0, 3.0]])}
 
@@ -85,16 +85,14 @@ def render() -> None:
 
     if a.shape == (2, 2):
         st.divider()
-        st.markdown("##### 🎬 Ver a matriz a tornar-se singular, em tempo real")
+        st.markdown("##### 🔎 Ver a matriz a tornar-se singular")
         posicoes = {"a11": (0, 0), "a12": (0, 1), "a21": (1, 0), "a22": (1, 1)}
-        rotulo_entrada = st.selectbox("Entrada a variar", list(posicoes.keys()), index=3)
+        col_entrada, col_valor = st.columns(2)
+        with col_entrada:
+            rotulo_entrada = st.selectbox("Entrada a variar", list(posicoes.keys()), index=3)
         posicao = posicoes[rotulo_entrada]
-        valores = np.linspace(-3, 3, n_frames(modo_leve_da_sessao()))
-        fig = figura_transformacao_parametrizada(
-            calcular_matriz=lambda x: simbolico.matriz_com_entrada_variavel(a, posicao, x),
-            valores_parametro=valores,
-            rotulo_parametro=rotulo_entrada,
-            mostrar_area=True,
-            modo_leve=modo_leve_da_sessao(),
-        )
-        st.plotly_chart(fig, width="stretch")
+        with col_valor:
+            valor_entrada = st.number_input(f"Valor de {rotulo_entrada}", value=float(a[posicao]), step=0.5)
+        matriz_variada = simbolico.matriz_com_entrada_variavel(a, posicao, valor_entrada)
+        st.plotly_chart(figura_transformacao(matriz_variada, mostrar_area=True,
+                                              modo_leve=modo_leve_da_sessao()), width="stretch")
