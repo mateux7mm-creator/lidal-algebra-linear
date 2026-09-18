@@ -13,6 +13,8 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 import plotly.graph_objects as go
 
+from utils.exploracao_grafica import ResultadoEquacao
+
 GRID_INTERVALO = 2  # malha de -2 a 2 — usada para calcular o domínio inicial da vista
 FATOR_EXTENSAO = 4  # a malha/retas desenhadas são FATOR_EXTENSAO× maiores que a vista
                      # inicial, para dar zoom-out não revelar espaço vazio a meio da reta/grelha
@@ -404,4 +406,37 @@ def figura_transformacao_parametrizada(
     )
     fig.update_layout(annotations=_anotacoes_eixos(intervalo),
                        **_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra(intervalo))
+    return fig
+
+
+# --------------------------------------------------------------------------
+# Exploração Gráfica (equações em texto livre, estilo GeoGebra)
+# --------------------------------------------------------------------------
+
+def figura_exploracao_grafica(
+    equacoes: list[tuple[str, ResultadoEquacao, str]], intervalo: tuple[float, float] = (-10, 10),
+    altura: int = 650,
+) -> go.Figure:
+    """equacoes: lista de (rótulo, resultado já interpretado, cor). Desenha
+    cada curva explícita como uma linha e cada resultado implícito como um
+    contorno de nível 0 — com uma janela maior (altura fixa em pixels) e
+    margens reduzidas, para a Exploração Gráfica ocupar o espaço disponível
+    como uma vista GeoGebra."""
+    fig = go.Figure()
+    for rotulo, resultado, cor in equacoes:
+        if resultado.tipo == "implicita":
+            grelha = resultado.grelha
+            fig.add_trace(go.Contour(
+                x=grelha.x, y=grelha.y, z=grelha.z,
+                contours=dict(start=0, end=0, size=1, coloring="lines"),
+                line=dict(color=cor, width=2.5), showscale=False,
+                name=rotulo, hoverinfo="skip",
+            ))
+        else:
+            for curva in resultado.curvas:
+                fig.add_trace(go.Scatter(x=curva.x, y=curva.y, mode="lines",
+                                          line=dict(color=cor, width=2.5),
+                                          name=rotulo, hoverinfo="skip"))
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo), **_eixos_geogebra(intervalo),
+                       height=altura, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
     return fig
