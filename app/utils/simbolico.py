@@ -49,21 +49,32 @@ def somar_matrizes(a: sp.Matrix, b: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
     if a.shape != b.shape:
         raise ValueError(f"Dimensões incompatíveis para soma: {a.shape} vs {b.shape}")
     resultado = a + b
+    n_linhas, n_colunas = a.shape
     passos = [
-        Passo("Verificar dimensões", f"A e B são ambas {a.shape[0]}×{a.shape[1]} — a soma é possível."),
-        Passo("Somar elemento a elemento", "Cada entrada de C = A + B é c_ij = a_ij + b_ij.",
-              latex=f"{sp.latex(a)} + {sp.latex(b)} = {sp.latex(resultado)}"),
+        Passo("Verificar dimensões", f"A e B são ambas {n_linhas}×{n_colunas} — a soma é possível."),
     ]
+    for i in range(n_linhas):
+        for j in range(n_colunas):
+            passos.append(Passo(
+                f"Calcular c_{i + 1}{j + 1} = a_{i + 1}{j + 1} + b_{i + 1}{j + 1}", "",
+                latex=f"{sp.latex(a[i, j])} + {sp.latex(b[i, j])} = {sp.latex(resultado[i, j])}",
+            ))
+    passos.append(Passo("Matriz soma obtida", "", latex=f"A + B = {sp.latex(resultado)}"))
     return resultado, passos
 
 
 def multiplicar_escalar(k: float, a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
     k = sp.nsimplify(k)
     resultado = k * a
-    passos = [
-        Passo("Multiplicar cada entrada por k", "Cada entrada de k·A é k·a_ij.",
-              latex=f"{sp.latex(k)} \\cdot {sp.latex(a)} = {sp.latex(resultado)}"),
-    ]
+    n_linhas, n_colunas = a.shape
+    passos = []
+    for i in range(n_linhas):
+        for j in range(n_colunas):
+            passos.append(Passo(
+                f"Calcular a entrada ({i + 1}, {j + 1}) de k·A", "",
+                latex=f"{sp.latex(k)} \\cdot {sp.latex(a[i, j])} = {sp.latex(resultado[i, j])}",
+            ))
+    passos.append(Passo("Matriz k·A obtida", "", latex=f"{sp.latex(k)} \\cdot A = {sp.latex(resultado)}"))
     return resultado, passos
 
 
@@ -74,14 +85,20 @@ def multiplicar_matrizes(a: sp.Matrix, b: sp.Matrix) -> tuple[sp.Matrix, list[Pa
             "(nº de colunas de A tem de ser igual ao nº de linhas de B)."
         )
     resultado = a * b
+    n_linhas, n_interno, n_colunas = a.shape[0], a.shape[1], b.shape[1]
     passos = [
         Passo("Verificar dimensões",
-              f"A é {a.shape[0]}×{a.shape[1]}, B é {b.shape[0]}×{b.shape[1]} — "
+              f"A é {n_linhas}×{n_interno}, B é {n_interno}×{n_colunas} — "
               "colunas de A = linhas de B, o produto é possível."),
-        Passo("Calcular cada entrada",
-              "Cada entrada c_ij é o produto interno da linha i de A pela coluna j de B.",
-              latex=f"{sp.latex(a)} \\times {sp.latex(b)} = {sp.latex(resultado)}"),
     ]
+    for i in range(n_linhas):
+        for j in range(n_colunas):
+            termos = " + ".join(f"({sp.latex(a[i, k])})({sp.latex(b[k, j])})" for k in range(n_interno))
+            passos.append(Passo(
+                f"Calcular c_{i + 1}{j + 1} (linha {i + 1} de A vezes coluna {j + 1} de B)", "",
+                latex=f"{termos} = {sp.latex(resultado[i, j])}",
+            ))
+    passos.append(Passo("Matriz produto obtida", "", latex=f"A \\times B = {sp.latex(resultado)}"))
     return resultado, passos
 
 
@@ -94,15 +111,20 @@ def transpor(a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
     return resultado, passos
 
 
-def escalonar(a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
+def escalonar(a: sp.Matrix, colunas_pivo: Optional[int] = None) -> tuple[sp.Matrix, list[Passo]]:
     """Eliminação de Gauss até à forma escalonada (não reduzida), mostrando
     cada operação de linha — ao contrário de `.rref()`, que só devolve o
-    resultado final."""
+    resultado final.
+
+    `colunas_pivo` limita a busca de pivôs às primeiras N colunas (usado por
+    `resolver_sistema` sobre a matriz aumentada [A|b], para nunca escolher um
+    pivô na coluna de b); por omissão usa todas as colunas de `a`."""
     m = a.copy()
     n_linhas, n_colunas = m.shape
+    limite = colunas_pivo if colunas_pivo is not None else n_colunas
     passos = [Passo("Matriz inicial", "", latex=sp.latex(m))]
     linha_pivo = 0
-    for col in range(n_colunas):
+    for col in range(limite):
         if linha_pivo >= n_linhas:
             break
         if m[linha_pivo, col] == 0:
@@ -133,30 +155,110 @@ def escalonar(a: sp.Matrix) -> tuple[sp.Matrix, list[Passo]]:
 def determinante(a: sp.Matrix) -> tuple[sp.Expr, list[Passo]]:
     if a.shape[0] != a.shape[1]:
         raise ValueError("O determinante só está definido para matrizes quadradas.")
+    n = a.shape[0]
     valor = a.det()
-    metodo = "regra de Sarrus" if a.shape[0] in (2, 3) else "expansão de Laplace/eliminação"
-    passos = [
-        Passo("Confirmar que a matriz é quadrada", f"A é {a.shape[0]}×{a.shape[1]}."),
-        Passo(f"Calcular o determinante ({metodo})", "", latex=f"\\det{sp.latex(a)} = {sp.latex(valor)}"),
-    ]
+    passos = [Passo("Confirmar que a matriz é quadrada", f"A é {n}×{n}.")]
+
+    if n == 1:
+        passos.append(Passo("Determinante de uma matriz 1×1", "",
+                             latex=f"\\det(A) = {sp.latex(a[0, 0])}"))
+    elif n == 2:
+        a11, a12, a21, a22 = a[0, 0], a[0, 1], a[1, 0], a[1, 1]
+        p1, p2 = a11 * a22, a12 * a21
+        passos.append(Passo(
+            "Aplicar a fórmula 2×2", "det(A) = a₁₁·a₂₂ − a₁₂·a₂₁",
+            latex=(f"({sp.latex(a11)})({sp.latex(a22)}) - ({sp.latex(a12)})({sp.latex(a21)}) "
+                   f"= {sp.latex(p1)} - {sp.latex(p2)} = {sp.latex(valor)}"),
+        ))
+    elif n == 3:
+        m = a
+        termos_pos = [
+            (m[0, 0], m[1, 1], m[2, 2]),
+            (m[0, 1], m[1, 2], m[2, 0]),
+            (m[0, 2], m[1, 0], m[2, 1]),
+        ]
+        termos_neg = [
+            (m[0, 2], m[1, 1], m[2, 0]),
+            (m[0, 0], m[1, 2], m[2, 1]),
+            (m[0, 1], m[1, 0], m[2, 2]),
+        ]
+        produtos_pos = [x * y * z for x, y, z in termos_pos]
+        produtos_neg = [x * y * z for x, y, z in termos_neg]
+        soma_pos, soma_neg = sum(produtos_pos), sum(produtos_neg)
+
+        def fmt(termos, produtos):
+            fatores = " + ".join(f"({sp.latex(x)})({sp.latex(y)})({sp.latex(z)})" for x, y, z in termos)
+            return f"{fatores} = " + " + ".join(sp.latex(p) for p in produtos)
+        passos.append(Passo(
+            "Diagonais principais (regra de Sarrus)",
+            "Multiplicar cada diagonal descendente, incluindo as que \"dão a volta\" à matriz.",
+            latex=f"{fmt(termos_pos, produtos_pos)} = {sp.latex(soma_pos)}",
+        ))
+        passos.append(Passo(
+            "Diagonais secundárias",
+            "Multiplicar cada diagonal ascendente, incluindo as que \"dão a volta\" à matriz.",
+            latex=f"{fmt(termos_neg, produtos_neg)} = {sp.latex(soma_neg)}",
+        ))
+        passos.append(Passo(
+            "Subtrair as diagonais secundárias às principais",
+            "det(A) = (soma das diagonais principais) − (soma das diagonais secundárias).",
+            latex=f"{sp.latex(soma_pos)} - ({sp.latex(soma_neg)}) = {sp.latex(valor)}",
+        ))
+    else:
+        parcelas = []
+        for j in range(n):
+            menor = a.minor_submatrix(0, j)
+            sinal = (-1) ** j
+            cofator = sinal * menor.det()
+            sinal_str = "+" if sinal == 1 else "-"
+            parcelas.append(f"{sinal_str}({sp.latex(a[0, j])}) \\det{sp.latex(menor)}")
+        passos.append(Passo(
+            "Expansão de Laplace ao longo da 1ª linha",
+            "det(A) = Σⱼ (−1)^(1+j) · a₁ⱼ · det(menor sem a linha 1 e a coluna j).",
+            latex=" ".join(parcelas) + f" = {sp.latex(valor)}",
+        ))
     return valor, passos
 
 
 def inversa(a: sp.Matrix) -> tuple[Optional[sp.Matrix], list[Passo]]:
     """Assume que det(a) já foi calculado e mostrado (ex. via `determinante()`)
-    — não repete esse passo, só verifica singularidade e, se possível, inverte."""
+    — não repete esse passo, só verifica singularidade e, se possível, inverte
+    mostrando a matriz dos cofatores e a adjugada."""
     if a.shape[0] != a.shape[1]:
         raise ValueError("A inversa só está definida para matrizes quadradas.")
+    n = a.shape[0]
     det_a = a.det()
     passos: list[Passo] = []
     if det_a == 0:
         passos.append(Passo("Verificar singularidade",
                              "det(A) = 0 → a matriz não é invertível (é singular)."))
         return None, passos
-    resultado = a.inv()
-    passos.append(Passo("Calcular a inversa (Gauss-Jordan / matriz adjunta)",
-                         "Como det(A) ≠ 0, a inversa existe.",
-                         latex=f"A^{{-1}} = {sp.latex(resultado)}"))
+
+    if n == 2:
+        a11, a12, a21, a22 = a[0, 0], a[0, 1], a[1, 0], a[1, 1]
+        adjugada = sp.Matrix([[a22, -a12], [-a21, a11]])
+        passos.append(Passo(
+            "Formar a adjugada (caso 2×2: trocar a diagonal principal e negar a secundária)", "",
+            latex=f"adj(A) = {sp.latex(adjugada)}",
+        ))
+    else:
+        cofatores = a.cofactor_matrix()
+        adjugada = cofatores.T
+        passos.append(Passo(
+            "Calcular a matriz dos cofatores",
+            "Cada cofator Cᵢⱼ = (−1)^(i+j) · det(menor sem a linha i e a coluna j).",
+            latex=f"C = {sp.latex(cofatores)}",
+        ))
+        passos.append(Passo(
+            "Transpor os cofatores para obter a adjugada", "adj(A) = Cᵗ.",
+            latex=f"adj(A) = C^T = {sp.latex(adjugada)}",
+        ))
+
+    resultado = adjugada / det_a
+    passos.append(Passo(
+        "Dividir a adjugada pelo determinante", "A⁻¹ = (1/det(A))·adj(A).",
+        latex=f"A^{{-1}} = \\frac{{1}}{{{sp.latex(det_a)}}} {sp.latex(adjugada)} = {sp.latex(resultado)}",
+    ))
     return resultado, passos
 
 
@@ -182,17 +284,36 @@ def resolver_sistema(
     if simbolos is None:
         simbolos = list(sp.symbols(f"x1:{n_vars + 1}"))
     solucoes = sp.linsolve((a, b), simbolos)
+
+    aumentada = a.row_join(b)
+    _, passos_escalonamento = escalonar(aumentada, colunas_pivo=n_vars)
     passos = [
-        Passo("Montar o sistema", "Cada linha de A·x = b é uma equação linear.",
-              latex=f"{sp.latex(a)} \\, {sp.latex(sp.Matrix(simbolos))} = {sp.latex(b)}"),
-        Passo("Resolver (eliminação de Gauss / regra de Cramer)",
-              "SymPy resolve o sistema de forma simbólica, cobrindo os casos "
-              "de solução única, indeterminada ou impossível."),
+        Passo("Montar a matriz aumentada [A | b]",
+              "Cada linha de A·x = b passa a ser uma linha desta matriz, com b na última coluna.",
+              latex=f"[A \\mid b] = {sp.latex(aumentada)}"),
     ]
+    # passos_escalonamento[0] repete a matriz inicial, já mostrada no passo acima
+    passos += passos_escalonamento[1:]
+
     if len(solucoes) == 0:
-        passos.append(Passo("Interpretar o resultado", "O sistema é impossível (sem solução)."))
+        passos.append(Passo(
+            "Interpretar a forma escalonada",
+            "Uma linha do tipo 0 = c (com c ≠ 0) mostra que o sistema é impossível (sem solução).",
+        ))
     else:
-        passos.append(Passo("Interpretar o resultado", f"Solução: {solucoes}"))
+        classificacao = classificar_sistema(solucoes, simbolos)
+        if classificacao == "indeterminado":
+            passos.append(Passo(
+                "Interpretar a forma escalonada",
+                "Há menos equações independentes do que incógnitas — pelo menos uma "
+                "variável fica livre (sem pivô próprio), dando infinitas soluções.",
+            ))
+        else:
+            passos.append(Passo(
+                "Interpretar a forma escalonada",
+                "Cada incógnita tem uma linha com pivô próprio — a solução é única.",
+            ))
+        passos.append(Passo("Solução", "", latex=formatar_solucao_sistema(solucoes, simbolos)))
     return solucoes, passos
 
 
@@ -280,29 +401,56 @@ def analisar_equacoes(
 def eigen(a: sp.Matrix) -> tuple[list, list, list[Passo]]:
     if a.shape[0] != a.shape[1]:
         raise ValueError("Valores/vetores próprios só estão definidos para matrizes quadradas.")
+    n = a.shape[0]
+    lam = sp.Symbol("lambda")
+    matriz_caracteristica = a - lam * sp.eye(n)
+    polinomio = sp.expand(matriz_caracteristica.det())
+
     eigenvects = a.eigenvects()
-    valores = []
-    vetores = []
+    valores, vetores = [], []
     for valor, multiplicidade, vecs in eigenvects:
         for v in vecs:
             valores.append(valor)
             vetores.append(v)
+
     passos = [
-        Passo("Montar a equação característica", "det(A - λI) = 0 dá os valores próprios λ.",
-              latex=f"\\det({sp.latex(a)} - \\lambda I) = 0"),
-        Passo("Resolver para λ", "", latex=f"\\lambda \\in \\{{{', '.join(sp.latex(v) for v in valores)}\\}}"),
-        Passo("Calcular os vetores próprios", "Para cada λ, resolver (A - λI)v = 0."),
+        Passo("Montar a matriz característica A − λI", "",
+              latex=f"A - \\lambda I = {sp.latex(matriz_caracteristica)}"),
+        Passo("Calcular o determinante (polinómio característico)",
+              "det(A − λI) = 0 dá os valores próprios λ.",
+              latex=f"\\det(A - \\lambda I) = {sp.latex(polinomio)} = 0"),
     ]
+    fatorado = sp.factor(polinomio)
+    if fatorado != polinomio:
+        passos.append(Passo("Fatorizar o polinómio característico", "",
+                             latex=f"{sp.latex(fatorado)} = 0"))
+    passos.append(Passo(
+        "Resolver a equação característica para λ", "",
+        latex="\\lambda \\in \\{" + ", ".join(sp.latex(v) for v, _, _ in eigenvects) + "\\}",
+    ))
+    for valor, multiplicidade, vecs in eigenvects:
+        matriz_substituida = a - valor * sp.eye(n)
+        rotulo_mult = f" \\ (\\text{{multiplicidade }} {multiplicidade})" if multiplicidade > 1 else ""
+        passos.append(Passo(
+            f"Para λ = {sp.latex(valor)}: resolver (A − λI)v = 0",
+            "Substituir este valor de λ e resolver o sistema homogéneo para encontrar v.",
+            latex=(f"{sp.latex(matriz_substituida)} \\, v = 0 \\ \\Rightarrow \\ "
+                   f"v = {sp.latex(vecs[0])}{rotulo_mult}"),
+        ))
     return valores, vetores, passos
 
 
 def diagonalizar(a: sp.Matrix) -> tuple[Optional[tuple[sp.Matrix, sp.Matrix]], list[Passo]]:
     try:
         p, d = a.diagonalize()
+        verificacao = sp.simplify(p * d * p.inv() - a)
         passos = [
-            Passo("Formar P (vetores próprios) e D (valores próprios)",
-                  "A é diagonalizável: A = P·D·P⁻¹.",
+            Passo("Formar P (vetores próprios nas colunas) e D (valores próprios na diagonal)",
+                  "A é diagonalizável porque tem vetores próprios suficientes para preencher P.",
                   latex=f"P = {sp.latex(p)}, \\quad D = {sp.latex(d)}"),
+            Passo("Verificar que A = P·D·P⁻¹",
+                  "A diferença entre P·D·P⁻¹ e A deve dar a matriz nula.",
+                  latex=f"P \\, D \\, P^{{-1}} - A = {sp.latex(verificacao)}"),
         ]
         return (p, d), passos
     except Exception:

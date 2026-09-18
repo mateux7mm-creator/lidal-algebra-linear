@@ -110,25 +110,50 @@ def render() -> None:
         if operacao == "Soma":
             resultado = v + w
             st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
-            passos = [Passo("Somar componente a componente", "(v + w)_i = v_i + w_i")]
+            passos = [
+                Passo(f"Somar a componente {i + 1}: v_{i + 1} + w_{i + 1}", "",
+                      latex=f"{v[i]:g} + {w[i]:g} = {resultado[i]:g}")
+                for i in range(len(v))
+            ]
         elif operacao == "Produto interno":
             resultado = float(np.dot(v, w))
             st.latex(f"{simbolo_operacao} = {resultado:g}")
-            passos = [Passo("Somar os produtos das componentes", "v · w = Σ v_i · w_i")]
+            termos = " + ".join(f"({v[i]:g})({w[i]:g})" for i in range(len(v)))
+            valores_termos = " + ".join(f"{v[i] * w[i]:g}" for i in range(len(v)))
+            passos = [Passo("Multiplicar cada par de componentes e somar", "",
+                             latex=f"{termos} = {valores_termos} = {resultado:g}")]
         elif operacao == "Produto externo":
             resultado = np.cross(v, w)
             st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
-            passos = [Passo("Calcular o produto vetorial", "v × w é perpendicular a v e a w (só definido em 3D)")]
+            rotulos = [("v_2 w_3 - v_3 w_2", 1, 2, 2, 1), ("v_3 w_1 - v_1 w_3", 2, 0, 0, 2),
+                       ("v_1 w_2 - v_2 w_1", 0, 1, 1, 0)]
+            passos = [
+                Passo(f"Calcular a componente {i + 1} do produto externo", formula,
+                      latex=f"({v[ia]:g})({w[ib]:g}) - ({v[ic]:g})({w[id_]:g}) = {resultado[i]:g}")
+                for i, (formula, ia, ib, ic, id_) in enumerate(rotulos)
+            ]
         elif operacao == "Norma":
             resultado = float(np.linalg.norm(v))
             st.latex(f"{simbolo_operacao} = {resultado:g}")
-            passos = [Passo("Raiz quadrada da soma dos quadrados", "‖v‖ = √(Σ v_i²)")]
+            quadrados = " + ".join(f"({v[i]:g})^2" for i in range(len(v)))
+            soma_quadrados = float(np.sum(v ** 2))
+            passos = [
+                Passo("Elevar cada componente ao quadrado e somar", "",
+                      latex=f"{quadrados} = {soma_quadrados:g}"),
+                Passo("Calcular a raiz quadrada da soma", "",
+                      latex=f"\\sqrt{{{soma_quadrados:g}}} = {resultado:g}"),
+            ]
         else:  # Teste de ortogonalidade
             produto = float(np.dot(v, w))
             ortogonais = abs(produto) < 1e-9
             st.latex(f"{simbolo_operacao} = {produto:.4g}")
             st.markdown("✅ **Ortogonais**" if ortogonais else "❌ **Não ortogonais**")
-            passos = [Passo("Calcular v · w", "Se v · w = 0, os vetores são ortogonais.")]
+            termos = " + ".join(f"({v[i]:g})({w[i]:g})" for i in range(len(v)))
+            passos = [
+                Passo("Calcular v · w", "", latex=f"{termos} = {produto:.4g}"),
+                Passo("Concluir", f"Como v · w {'=' if ortogonais else '≠'} 0, os vetores "
+                                   f"{'são' if ortogonais else 'não são'} ortogonais."),
+            ]
 
     if mostrar_passo_a_passo and passos:
         mostrar_passos(passos)

@@ -121,8 +121,7 @@ def render() -> None:
             st.latex(solucao_latex)
 
     if st.session_state["sistemas_passo_a_passo"]:
-        # passos_resolucao[0] repete "montar o sistema", já mostrado por analisar_equacoes
-        mostrar_passos(passos + passos_resolucao[1:])
+        mostrar_passos(passos + passos_resolucao)
 
     if n_variaveis == 2:
         st.divider()
