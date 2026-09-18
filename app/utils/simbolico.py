@@ -12,6 +12,14 @@ from typing import Optional
 
 import numpy as np
 import sympy as sp
+from sympy.parsing.sympy_parser import (
+    convert_xor,
+    implicit_multiplication_application,
+    parse_expr,
+    standard_transformations,
+)
+
+_TRANSFORMACOES = standard_transformations + (implicit_multiplication_application, convert_xor)
 
 
 @dataclass
@@ -147,6 +155,60 @@ def resolver_sistema(a: sp.Matrix, b: sp.Matrix) -> tuple[object, list[Passo]]:
     else:
         passos.append(Passo("Interpretar o resultado", f"Solução: {solucoes}"))
     return solucoes, passos
+
+
+def analisar_equacoes(
+    variaveis_texto: str, textos_equacoes: list[str]
+) -> tuple[sp.Matrix, sp.Matrix, list[sp.Symbol], list[Passo]]:
+    """Interpreta equações escritas em texto livre (ex. "2x + 4y = 6") sobre as
+    incógnitas dadas em `variaveis_texto` (ex. "x, y"), devolvendo a matriz de
+    coeficientes A, o vetor b, os símbolos usados e os passos pedagógicos.
+
+    Lança ValueError com uma mensagem amigável (nunca uma exceção crua do
+    SymPy) se as incógnitas estiverem vazias, uma equação não puder ser
+    interpretada, ou não for linear nas incógnitas indicadas.
+    """
+    if not variaveis_texto.strip():
+        raise ValueError("Define pelo menos uma incógnita (ex.: x, y).")
+    resultado = sp.symbols(variaveis_texto)
+    simbolos = list(resultado) if isinstance(resultado, tuple) else [resultado]
+    if not all(isinstance(s, sp.Symbol) for s in simbolos):
+        raise ValueError(f"Não consegui interpretar as incógnitas \"{variaveis_texto}\".")
+    mapa_simbolos = {s.name: s for s in simbolos}
+
+    passos = [Passo("Definir as incógnitas", f"Variáveis: {', '.join(s.name for s in simbolos)}")]
+    linhas_a, valores_b = [], []
+    for i, texto in enumerate(textos_equacoes, start=1):
+        texto = texto.strip()
+        if not texto:
+            raise ValueError(f"A equação {i} está vazia.")
+        if "=" not in texto:
+            raise ValueError(f"Equação {i} inválida: falta o sinal \"=\" (ex.: 2x + 4y = 6).")
+        lado_esq, lado_dir = texto.split("=", 1)
+        try:
+            expr_esq = parse_expr(lado_esq, local_dict=mapa_simbolos, transformations=_TRANSFORMACOES)
+            expr_dir = parse_expr(lado_dir, local_dict=mapa_simbolos, transformations=_TRANSFORMACOES)
+        except (sp.SympifyError, SyntaxError, TypeError, AttributeError) as erro:
+            raise ValueError(f"Equação {i} não foi entendida: \"{texto}\".") from erro
+        equacao = sp.Eq(expr_esq, expr_dir)
+        try:
+            linha, valor = sp.linear_eq_to_matrix([equacao], simbolos)
+        except (ValueError, NotImplementedError) as erro:
+            raise ValueError(
+                f"Equação {i} não é linear nas incógnitas definidas "
+                f"({', '.join(s.name for s in simbolos)})."
+            ) from erro
+        linhas_a.append(linha.tolist()[0])
+        valores_b.append(valor.tolist()[0][0])
+        passos.append(Passo(f"Equação {i}", "", latex=sp.latex(equacao)))
+
+    a_matriz = sp.Matrix(linhas_a)
+    b_vetor = sp.Matrix(valores_b)
+    passos.append(Passo(
+        "Montar a forma matricial A·x = b", "",
+        latex=f"{sp.latex(a_matriz)} \\, {sp.latex(sp.Matrix(simbolos))} = {sp.latex(b_vetor)}",
+    ))
+    return a_matriz, b_vetor, simbolos, passos
 
 
 # --------------------------------------------------------------------------

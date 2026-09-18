@@ -7,11 +7,34 @@ são mostrados) só precisa de ser feita num sítio.
 """
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 import sympy as sp
 import streamlit as st
 
 from utils.simbolico import Passo
+
+
+def barra_menus(menus: dict[str, Callable[[], None]]) -> None:
+    """Barra de menus estilo desktop (ex. Winplot): cada entrada é um rótulo
+    de menu (ex. "Equações") associado a uma função que desenha o conteúdo do
+    popover quando o utilizador o abre. Os itens dentro de cada popover são
+    controlos Streamlit normais (botões, toggles) — o menu só organiza o
+    acesso, a ação real fica na função de callback.
+
+    Uso:
+        barra_menus({
+            "Equações": _menu_equacoes,
+            "Ver": _menu_ver,
+            "Exportar": _menu_exportar,
+        })
+    """
+    colunas = st.columns(len(menus))
+    for coluna, (rotulo, desenhar_conteudo) in zip(colunas, menus.items()):
+        with coluna:
+            with st.popover(f"{rotulo} ▾", width="stretch"):
+                desenhar_conteudo()
 
 
 def cabecalho(icone_titulo: str, descricao: str) -> None:

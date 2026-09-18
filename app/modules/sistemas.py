@@ -1,51 +1,111 @@
-"""Módulo Sistemas Lineares: resolução e interpretação geométrica."""
+"""Módulo Sistemas Lineares: resolução e interpretação geométrica.
+
+Estilo "Winplot": as equações escrevem-se em texto livre (ex. "2x + 4y = 6"),
+depois de se definirem as incógnitas, e uma barra de menus no topo organiza
+as ações (gerir equações, opções de visualização, exportar).
+"""
+from __future__ import annotations
+
 import numpy as np
+import sympy as sp
 import streamlit as st
 
 from utils import simbolico
 from utils.componentes import (
+    barra_menus,
     cabecalho,
-    matriz_input,
     modo_leve_da_sessao,
-    modo_passo_a_passo_ativo,
     mostrar_passos,
-    vetor_input,
 )
 from utils.visualizacao import figura_retas_2d, figura_sistema_2d_animado, n_frames
 
+EXEMPLO_PADRAO = ["x + y = 3", "x - y = 1"]
+
+
+def _inicializar_estado() -> None:
+    st.session_state.setdefault("sistemas_variaveis", "x, y")
+    st.session_state.setdefault("sistemas_n_eq", len(EXEMPLO_PADRAO))
+    st.session_state.setdefault("sistemas_passo_a_passo", True)
+    st.session_state.setdefault("sistemas_mostrar_exploracao", True)
+    for i, eq in enumerate(EXEMPLO_PADRAO):
+        st.session_state.setdefault(f"sistemas_eq_{i}", eq)
+
+
+def _menu_equacoes() -> None:
+    st.caption("Gerir as equações do sistema")
+    if st.button("➕ Adicionar equação", key="sistemas_btn_add", width="stretch"):
+        st.session_state.setdefault(f"sistemas_eq_{st.session_state['sistemas_n_eq']}", "")
+        st.session_state["sistemas_n_eq"] += 1
+    if st.button("➖ Remover última equação", key="sistemas_btn_rem", width="stretch"):
+        if st.session_state["sistemas_n_eq"] > 1:
+            st.session_state["sistemas_n_eq"] -= 1
+    if st.button("🔄 Repor exemplo (2 equações)", key="sistemas_btn_reset", width="stretch"):
+        st.session_state["sistemas_variaveis"] = "x, y"
+        st.session_state["sistemas_n_eq"] = len(EXEMPLO_PADRAO)
+        for i, eq in enumerate(EXEMPLO_PADRAO):
+            st.session_state[f"sistemas_eq_{i}"] = eq
+
+
+def _menu_ver() -> None:
+    st.caption("Opções de visualização")
+    st.toggle("Mostrar modo passo-a-passo", key="sistemas_passo_a_passo")
+    st.toggle("Mostrar exploração animada", key="sistemas_mostrar_exploracao")
+
+
+def _menu_exportar(a: sp.Matrix, b: sp.Matrix, simbolos: list) -> None:
+    st.caption("Copiar o sistema (LaTeX)")
+    latex_sistema = f"{sp.latex(a)} {sp.latex(sp.Matrix(simbolos))} = {sp.latex(b)}"
+    st.latex(latex_sistema)
+    st.code(latex_sistema, language="latex")
+
 
 def render() -> None:
-    cabecalho("📐 Sistemas Lineares", "Resolução e interpretação geométrica.")
+    cabecalho("📐 Sistemas Lineares", "Escreve as equações em texto — como no papel.")
+    _inicializar_estado()
 
-    col_dim, col_toggle = st.columns([2, 1])
-    with col_dim:
-        n_variaveis = st.radio("Número de variáveis", [2, 3], horizontal=True)
-    with col_toggle:
-        mostrar_passo_a_passo = modo_passo_a_passo_ativo("sistemas")
+    st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
+                   placeholder="ex.: x, y")
 
-    col_a, col_b = st.columns([2, 1])
-    with col_a:
-        a = matriz_input("sistemas_A", linhas=n_variaveis, colunas=n_variaveis, titulo="Matriz de coeficientes A",
-                          valor_defeito=np.array([[1.0, 1.0], [1.0, -1.0]]) if n_variaveis == 2
-                          else np.array([[1.0, 1.0, 1.0], [1.0, -1.0, 2.0], [2.0, 1.0, -1.0]]))
-    with col_b:
-        b = vetor_input("sistemas_b", dimensao=n_variaveis, titulo="Termos independentes b",
-                         valor_defeito=np.array([3.0, 1.0]) if n_variaveis == 2 else np.array([6.0, 5.0, 3.0]))
+    st.markdown("**Equações**")
+    for i in range(st.session_state["sistemas_n_eq"]):
+        chave = f"sistemas_eq_{i}"
+        st.session_state.setdefault(chave, "")
+        st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: 2x + 4y = 6",
+                       label_visibility="collapsed")
 
-    a_sp = simbolico.para_sympy(a)
-    b_sp = simbolico.para_sympy(b.reshape(-1, 1))
-    solucoes, passos = simbolico.resolver_sistema(a_sp, b_sp)
+    textos_equacoes = [st.session_state[f"sistemas_eq_{i}"] for i in range(st.session_state["sistemas_n_eq"])]
+
+    try:
+        a_sp, b_sp, simbolos, passos = simbolico.analisar_equacoes(
+            st.session_state["sistemas_variaveis"], textos_equacoes
+        )
+    except ValueError as erro:
+        st.error(str(erro))
+        return
+
+    barra_menus({
+        "Equações": _menu_equacoes,
+        "Ver": _menu_ver,
+        "Exportar": lambda: _menu_exportar(a_sp, b_sp, simbolos),
+    })
+
+    n_variaveis = len(simbolos)
+    a = simbolico.para_numpy(a_sp)
+    b = simbolico.para_numpy(b_sp).reshape(-1)
+
+    solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp)
 
     with st.container(border=True):
         st.markdown("##### ✅ Resultado")
         st.markdown(f"**Solução simbólica (SymPy):** {solucoes}")
         if n_variaveis == 2 and abs(np.linalg.det(a)) > 1e-9:
             solucao_numerica = np.linalg.solve(a, b)
-            st.markdown(f"**Solução numérica (NumPy):** x = {solucao_numerica[0]:.4g}, "
-                        f"y = {solucao_numerica[1]:.4g}")
+            st.markdown(f"**Solução numérica (NumPy):** {simbolos[0]} = {solucao_numerica[0]:.4g}, "
+                        f"{simbolos[1]} = {solucao_numerica[1]:.4g}")
 
-    if mostrar_passo_a_passo:
-        mostrar_passos(passos)
+    if st.session_state["sistemas_passo_a_passo"]:
+        # passos_resolucao[0] repete "montar o sistema", já mostrado por analisar_equacoes
+        mostrar_passos(passos + passos_resolucao[1:])
 
     if n_variaveis == 2:
         st.divider()
@@ -53,20 +113,24 @@ def render() -> None:
         equacoes = [(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])]
         st.plotly_chart(figura_retas_2d(equacoes), width="stretch")
 
-        st.markdown("##### 🎬 Ver a reta e a interseção a variar em tempo real")
-        coef_variavel = st.selectbox("Coeficiente da 2ª equação a variar", ["a21 (x)", "a22 (y)"], index=1)
-        valores = np.linspace(-3, 3, n_frames(modo_leve_da_sessao()))
-        if coef_variavel.startswith("a21"):
-            calcular_eq = lambda p: (p, a[1, 1], b[1])
-        else:
-            calcular_eq = lambda p: (a[1, 0], p, b[1])
-        fig_anim = figura_sistema_2d_animado(
-            equacao_fixa=(a[0, 0], a[0, 1], b[0]),
-            calcular_equacao_variavel=calcular_eq,
-            valores_parametro=valores,
-            modo_leve=modo_leve_da_sessao(),
-        )
-        st.plotly_chart(fig_anim, width="stretch")
-    else:
+        if st.session_state["sistemas_mostrar_exploracao"]:
+            st.markdown("##### 🎬 Ver a reta e a interseção a variar em tempo real")
+            coef_variavel = st.selectbox(
+                "Coeficiente da 2ª equação a variar",
+                [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
+            )
+            valores = np.linspace(-3, 3, n_frames(modo_leve_da_sessao()))
+            if coef_variavel.endswith(str(simbolos[0])):
+                calcular_eq = lambda p: (p, a[1, 1], b[1])
+            else:
+                calcular_eq = lambda p: (a[1, 0], p, b[1])
+            fig_anim = figura_sistema_2d_animado(
+                equacao_fixa=(a[0, 0], a[0, 1], b[0]),
+                calcular_equacao_variavel=calcular_eq,
+                valores_parametro=valores,
+                modo_leve=modo_leve_da_sessao(),
+            )
+            st.plotly_chart(fig_anim, width="stretch")
+    elif n_variaveis == 3:
         st.info("A visualização 3D da interseção de planos ficará disponível numa iteração seguinte "
                  "— a resolução simbólica acima já funciona para 3 variáveis.")
