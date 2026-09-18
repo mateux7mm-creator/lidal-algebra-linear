@@ -147,8 +147,8 @@ def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
 
 
 def modo_passo_a_passo_ativo(chave_pagina: str) -> bool:
-    """Toggle único, igual em todos os módulos, ligado por omissão."""
-    return st.toggle("🔍 Mostrar modo passo-a-passo", value=True, key=f"{chave_pagina}_passo_a_passo")
+    """Toggle único, igual em todos os módulos, desligado por omissão."""
+    return st.toggle("🔍 Mostrar modo passo-a-passo", value=False, key=f"{chave_pagina}_passo_a_passo")
 
 
 def modo_leve_ativo() -> bool:
@@ -176,7 +176,7 @@ def mostrar_passos(passos: list[Passo]) -> None:
     """Renderização uniforme da lista de passos pedagógicos."""
     st.markdown("##### 🔍 Como se chega ao resultado")
     for i, passo in enumerate(passos, start=1):
-        with st.expander(f"Passo {i}: {passo.titulo}", expanded=True):
+        with st.expander(f"Passo {i}: {passo.titulo}", expanded=False):
             if passo.detalhe:
                 st.write(passo.detalhe)
             if passo.latex:

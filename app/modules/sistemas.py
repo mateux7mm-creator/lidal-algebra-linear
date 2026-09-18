@@ -24,7 +24,7 @@ EXEMPLO_PADRAO = ["x + y = 3", "x - y = 1"]
 def _inicializar_estado() -> None:
     st.session_state.setdefault("sistemas_variaveis", "x, y")
     st.session_state.setdefault("sistemas_n_eq", len(EXEMPLO_PADRAO))
-    st.session_state.setdefault("sistemas_passo_a_passo", True)
+    st.session_state.setdefault("sistemas_passo_a_passo", False)
     st.session_state.setdefault("sistemas_mostrar_exploracao", True)
     for i, eq in enumerate(EXEMPLO_PADRAO):
         st.session_state.setdefault(f"sistemas_eq_{i}", eq)
