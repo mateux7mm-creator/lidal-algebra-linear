@@ -53,8 +53,13 @@ def _exemplo_determinantes() -> None:
 def _exemplo_sistemas() -> None:
     a = np.array([[1.0, 1.0], [1.0, -1.0]])
     b = np.array([3.0, 1.0])
-    solucoes, passos = simbolico.resolver_sistema(simbolico.para_sympy(a), simbolico.para_sympy(b.reshape(-1, 1)))
-    st.write("Solução:", solucoes)
+    simbolos = list(sp.symbols(f"x1:{a.shape[1] + 1}"))
+    solucoes, passos = simbolico.resolver_sistema(
+        simbolico.para_sympy(a), simbolico.para_sympy(b.reshape(-1, 1)), simbolos
+    )
+    solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
+    if solucao_latex is not None:
+        st.latex(solucao_latex)
     mostrar_passos(passos)
     fig = figura_retas_2d([(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])])
     st.plotly_chart(fig, width="stretch")

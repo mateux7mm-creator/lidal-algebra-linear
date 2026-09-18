@@ -171,9 +171,16 @@ def matriz_com_entrada_variavel(a: np.ndarray, posicao: tuple[int, int], valor: 
 # Sistemas Lineares
 # --------------------------------------------------------------------------
 
-def resolver_sistema(a: sp.Matrix, b: sp.Matrix) -> tuple[object, list[Passo]]:
+def resolver_sistema(
+    a: sp.Matrix, b: sp.Matrix, simbolos: Optional[list[sp.Symbol]] = None
+) -> tuple[object, list[Passo]]:
+    """Se `simbolos` não for dado, usa nomes genéricos x1, x2, ... — mas para
+    que uma eventual solução indeterminada apareça com o(s) mesmo(s) nome(s)
+    de variável escolhidos pelo utilizador (em vez de um parâmetro livre com
+    nome genérico), o `linsolve` deve resolver diretamente sobre `simbolos`."""
     n_vars = a.shape[1]
-    simbolos = sp.symbols(f"x1:{n_vars + 1}")
+    if simbolos is None:
+        simbolos = list(sp.symbols(f"x1:{n_vars + 1}"))
     solucoes = sp.linsolve((a, b), simbolos)
     passos = [
         Passo("Montar o sistema", "Cada linha de A·x = b é uma equação linear.",
@@ -187,6 +194,29 @@ def resolver_sistema(a: sp.Matrix, b: sp.Matrix) -> tuple[object, list[Passo]]:
     else:
         passos.append(Passo("Interpretar o resultado", f"Solução: {solucoes}"))
     return solucoes, passos
+
+
+def classificar_sistema(solucoes, simbolos: list[sp.Symbol]) -> str:
+    """Classifica o sistema a partir do resultado de `linsolve`: "determinado"
+    (solução única), "indeterminado" (infinitas soluções, com parâmetro livre)
+    ou "impossivel" (sem solução)."""
+    if len(solucoes) == 0:
+        return "impossivel"
+    tupla = next(iter(solucoes))
+    livres: set[sp.Symbol] = set()
+    for expr in tupla:
+        livres |= expr.free_symbols & set(simbolos)
+    return "indeterminado" if livres else "determinado"
+
+
+def formatar_solucao_sistema(solucoes, simbolos: list[sp.Symbol]) -> Optional[str]:
+    """Devolve a solução em LaTeX como "x = ..., y = ...", ou None se o
+    sistema não tiver solução (impossível)."""
+    if len(solucoes) == 0:
+        return None
+    tupla = next(iter(solucoes))
+    partes = [f"{sp.latex(s)} = {sp.latex(v)}" for s, v in zip(simbolos, tupla)]
+    return r",\ \ ".join(partes)
 
 
 def analisar_equacoes(

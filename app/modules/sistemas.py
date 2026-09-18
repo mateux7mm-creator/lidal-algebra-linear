@@ -6,7 +6,6 @@ as ações (gerir equações, opções de visualização, exportar).
 """
 from __future__ import annotations
 
-import numpy as np
 import sympy as sp
 import streamlit as st
 
@@ -105,15 +104,21 @@ def render() -> None:
     n_equacoes = a.shape[0]
     sistema_2x2 = (n_equacoes, n_variaveis) == (2, 2)
 
-    solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp)
+    solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp, simbolos)
+    classificacao = simbolico.classificar_sistema(solucoes, simbolos)
+    rotulo_classificacao = {
+        "determinado": "✅ Sistema possível e determinado — solução única",
+        "indeterminado": "♾️ Sistema possível e indeterminado — infinitas soluções",
+        "impossivel": "🚫 Sistema impossível — não tem solução",
+    }[classificacao]
 
     with st.container(border=True):
-        st.markdown("##### ✅ Resultado")
-        st.markdown(f"**Solução simbólica (SymPy):** {solucoes}")
-        if sistema_2x2 and abs(np.linalg.det(a)) > 1e-9:
-            solucao_numerica = np.linalg.solve(a, b)
-            st.markdown(f"**Solução numérica (NumPy):** {simbolos[0]} = {solucao_numerica[0]:.4g}, "
-                        f"{simbolos[1]} = {solucao_numerica[1]:.4g}")
+        st.markdown("##### Resultado")
+        st.markdown(f"**Classificação:** {rotulo_classificacao}")
+        solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
+        if solucao_latex is not None:
+            st.markdown("**Solução:**")
+            st.latex(solucao_latex)
 
     if st.session_state["sistemas_passo_a_passo"]:
         # passos_resolucao[0] repete "montar o sistema", já mostrado por analisar_equacoes
