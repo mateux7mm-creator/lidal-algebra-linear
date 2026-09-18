@@ -52,19 +52,29 @@ def _circulo_pontos(modo_leve: bool = False) -> np.ndarray:
     return np.column_stack([np.cos(angulos), np.sin(angulos)])
 
 
+def _dtick_legivel(largura: float, maximo_ticks: int = 10) -> float:
+    """Escolhe um espaçamento "redondo" (1, 2, 5, 10, 20, 25, 50, ...) entre
+    marcas do eixo, com no máximo `maximo_ticks` marcas dentro de `largura`."""
+    bruto = largura / maximo_ticks
+    passos_redondos = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]
+    return next((p for p in passos_redondos if p >= bruto), passos_redondos[-1])
+
+
 def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
     """Layout de eixos/grelha ao estilo GeoGebra: grelha cinzenta clara,
-    eixos mais escuros a passar pela origem, fundo branco, texto horizontal.
+    eixos mais escuros a passar pela origem, fundo branco.
 
-    Usa `nticks` (não `dtick`) porque `scaleanchor`/`scaleratio` (escala igual
-    em x/y) pode expandir o eixo x muito além de `intervalo` para caber no
-    aspeto do contentor — um `dtick` fixo calculado a partir de `intervalo`
-    ficaria sobrelotado nesse caso; `nticks` deixa o Plotly escolher um
-    espaçamento "redondo" já a partir do intervalo final, seja ele qual for.
+    Os números das marcas são escondidos aqui (`showticklabels=False`) e
+    substituídos por anotações próprias em `_anotacoes_eixos`, posicionadas
+    junto aos eixos que se cruzam (normalmente perto do meio do gráfico),
+    não à margem do gráfico como o Plotly faz por omissão — mais parecido
+    com o GeoGebra. `dtick` é fixado ao mesmo valor "redondo" usado para
+    gerar essas anotações, para a grelha ficar alinhada com os números.
     """
+    dtick = _dtick_legivel(intervalo[1] - intervalo[0])
     eixo = dict(range=list(intervalo), showgrid=True, gridcolor="#e3e3e3", gridwidth=1,
                 zeroline=True, zerolinecolor="#444444", zerolinewidth=2,
-                nticks=13, tickangle=0)
+                dtick=dtick, showticklabels=False)
     return dict(
         xaxis={**eixo, "scaleanchor": "y", "scaleratio": 1},
         yaxis=eixo,
@@ -75,10 +85,8 @@ def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
 
 
 def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
-    """Pequenas etiquetas "x"/"y" perto da ponta positiva de cada eixo, ao
-    estilo GeoGebra — usa anotações (não `xaxis.title`/`yaxis.title`, que ao
-    ficarem centradas ao longo do eixo sobrepunham-se ao valor "0" da grelha
-    em gráficos pequenos).
+    """Etiquetas "x"/"y" na ponta de cada eixo + números das marcas junto aos
+    próprios eixos (não à margem do gráfico) — ao estilo GeoGebra.
 
     A etiqueta "x" usa `xref="paper"` (sempre a margem direita real do
     gráfico) em vez de `xref="x"` (dados): como `scaleanchor`/`scaleratio`
@@ -86,14 +94,39 @@ def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
     caber no aspeto do contentor, uma posição em coordenadas de dados como
     `x=intervalo[1]` deixaria de estar junto à margem, ficando perto do
     centro. O eixo y não estica (é a referência de `scaleanchor`), por isso
-    a etiqueta "y" pode usar coordenadas de dados em ambos os eixos.
+    a etiqueta "y" e os números das marcas podem usar coordenadas de dados.
+
+    Os números estendem-se até FATOR_EXTENSAO_MARCAS× o intervalo pedido
+    (menos que o FATOR_EXTENSAO das retas/malha, para não gerar demasiadas
+    anotações), para continuarem a aparecer num zoom-out moderado.
     """
-    return [
+    FATOR_EXTENSAO_MARCAS = 2
+    dtick = _dtick_legivel(intervalo[1] - intervalo[0])
+    maximo = intervalo[1] * FATOR_EXTENSAO_MARCAS
+
+    anotacoes = [
         dict(x=0.99, xref="paper", y=0, yref="y", text="x", showarrow=False,
              xanchor="right", yanchor="bottom", yshift=4, font=dict(size=14, color="#1f2430")),
         dict(x=0, xref="x", y=intervalo[1], yref="y", text="y", showarrow=False,
              xanchor="left", yanchor="top", xshift=6, font=dict(size=14, color="#1f2430")),
+        dict(x=0, xref="x", y=0, yref="y", text="0", showarrow=False,
+             xanchor="right", yanchor="top", xshift=-4, yshift=-4,
+             font=dict(size=11, color="#666666")),
     ]
+    fonte_numeros = dict(size=11, color="#666666")
+    v = dtick
+    while v <= maximo:
+        rotulo = f"{v:g}"
+        anotacoes.append(dict(x=v, xref="x", y=0, yref="y", text=rotulo, showarrow=False,
+                               xanchor="center", yanchor="top", yshift=-6, font=fonte_numeros))
+        anotacoes.append(dict(x=-v, xref="x", y=0, yref="y", text=f"−{rotulo}", showarrow=False,
+                               xanchor="center", yanchor="top", yshift=-6, font=fonte_numeros))
+        anotacoes.append(dict(x=0, xref="x", y=v, yref="y", text=rotulo, showarrow=False,
+                               xanchor="right", yanchor="middle", xshift=-6, font=fonte_numeros))
+        anotacoes.append(dict(x=0, xref="x", y=-v, yref="y", text=f"−{rotulo}", showarrow=False,
+                               xanchor="right", yanchor="middle", xshift=-6, font=fonte_numeros))
+        v += dtick
+    return anotacoes
 
 
 def _layout_com_slider(valores_parametro: Sequence[float], rotulo_parametro: str) -> dict:
