@@ -1,5 +1,7 @@
-"""Módulo Vetores: operações vetoriais e visualização 2D/3D."""
+"""Módulo Vetores: operações vetoriais e visualização 2D/3D, sobre um número
+arbitrário de vetores nomeados (mesmo estilo do módulo Matrizes)."""
 import numpy as np
+import sympy as sp
 import streamlit as st
 
 from utils.componentes import (
@@ -12,15 +14,36 @@ from utils.componentes import (
 from utils.simbolico import Passo
 from utils.visualizacao import figura_vetor_escalado, figura_vetores_2d, figura_vetores_3d, n_frames
 
-CORES = ["#e15759", "#4e79a7"]
+OPERACOES_2_VETORES = ["Soma", "Produto interno", "Produto externo", "Teste de ortogonalidade"]
+OPERACOES_1_VETOR = ["Norma"]
+
+CORES = ["#e15759", "#4e79a7", "#59a14f", "#f28e2b", "#b07aa1", "#76b7b2"]
+VALORES_DEFEITO = {"v": np.array([2.0, 1.0]), "w": np.array([1.0, 2.0])}
 
 
-def _fmt_vetor(v: np.ndarray) -> str:
-    return "(" + ", ".join(f"{x:g}" for x in np.round(v, 4)) + ")"
+def _inicializar_estado() -> None:
+    st.session_state.setdefault("vetores_nomes", ["v", "w"])
+
+
+def _adicionar_vetor() -> None:
+    nomes = st.session_state["vetores_nomes"]
+    letras_usadas = set(nomes)
+    for codigo in range(ord("a"), ord("z") + 1):
+        letra = chr(codigo)
+        if letra not in letras_usadas and letra not in ("i", "j", "k"):
+            nomes.append(letra)
+            return
+
+
+def _remover_ultimo_vetor() -> None:
+    nomes = st.session_state["vetores_nomes"]
+    if len(nomes) > 1:
+        st.session_state["vetores_nomes"].pop()
 
 
 def render() -> None:
     cabecalho("➡️ Vetores", "Operações vetoriais e visualização 2D/3D.")
+    _inicializar_estado()
 
     col_dim, col_toggle = st.columns([2, 1])
     with col_dim:
@@ -28,38 +51,84 @@ def render() -> None:
     with col_toggle:
         mostrar_passo_a_passo = modo_passo_a_passo_ativo("vetores")
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        v = vetor_input("vetores_v", dimensao=dimensao, titulo="Vetor v",
-                         valor_defeito=np.array([2.0, 1.0] if dimensao == 2 else [2.0, 1.0, 0.0]))
-    with col_b:
-        w = vetor_input("vetores_w", dimensao=dimensao, titulo="Vetor w",
-                         valor_defeito=np.array([1.0, 2.0] if dimensao == 2 else [0.0, 1.0, 2.0]))
+    col_add, col_rem = st.columns(2)
+    with col_add:
+        st.button("➕ Adicionar vetor", width="stretch", on_click=_adicionar_vetor, key="vetores_btn_add")
+    with col_rem:
+        st.button("➖ Remover último vetor", width="stretch", on_click=_remover_ultimo_vetor,
+                   disabled=len(st.session_state["vetores_nomes"]) <= 1, key="vetores_btn_rem")
 
-    operacoes = ["Soma", "Produto interno", "Norma", "Teste de ortogonalidade"]
-    if dimensao == 3:
-        operacoes.insert(2, "Produto externo")
-    operacao = st.selectbox("Operação", operacoes)
+    nomes = st.session_state["vetores_nomes"]
+    vetores: dict[str, np.ndarray] = {}
+    colunas = st.columns(min(len(nomes), 3))
+    for i, nome in enumerate(nomes):
+        with colunas[i % len(colunas)]:
+            defeito = VALORES_DEFEITO.get(nome, np.ones(2))
+            if len(defeito) != dimensao:
+                defeito = np.ones(dimensao)
+            vetores[nome] = vetor_input(f"vetores_{nome}", dimensao=dimensao, titulo=f"Vetor {nome}",
+                                         valor_defeito=defeito)
+
+    st.divider()
+    operacoes = list(OPERACOES_2_VETORES)
+    if dimensao != 3:
+        operacoes.remove("Produto externo")
+    operacoes += OPERACOES_1_VETOR
+    operacao = st.selectbox("Escolher operação", operacoes)
+
+    if operacao in OPERACOES_1_VETOR:
+        nome_v = st.selectbox("Vetor", nomes, key="vetores_op_nome_unico")
+        v, w, nome_w = vetores[nome_v], None, None
+    else:
+        if len(nomes) < 2:
+            st.warning("Esta operação precisa de pelo menos 2 vetores — adiciona outro acima.")
+            return
+        col1, col2 = st.columns(2)
+        with col1:
+            nome_v = st.selectbox("Vetor 1", nomes, index=0, key="vetores_op_nome1")
+        with col2:
+            nome_w = st.selectbox("Vetor 2", nomes, index=min(1, len(nomes) - 1), key="vetores_op_nome2")
+        v, w = vetores[nome_v], vetores[nome_w]
+
+    latex_v = sp.latex(sp.Matrix(np.round(v, 4).tolist()))
+    latex_w = sp.latex(sp.Matrix(np.round(w, 4).tolist())) if w is not None else None
+    simbolo_operacao = {
+        "Soma": f"{latex_v} + {latex_w}",
+        "Produto interno": f"{latex_v} \\cdot {latex_w}",
+        "Produto externo": f"{latex_v} \\times {latex_w}",
+        "Teste de ortogonalidade": f"{latex_v} \\cdot {latex_w}",
+        "Norma": f"\\lVert {latex_v} \\rVert",
+    }[operacao]
+
+    with st.container(border=True):
+        st.markdown("##### 🔎 Operandos escolhidos")
+        st.caption(f"Vetor {nome_v}" + (f" e Vetor {nome_w}" if nome_w else ""))
+        st.latex(simbolo_operacao)
 
     passos: list[Passo] = []
     with st.container(border=True):
         st.markdown("##### ✅ Resultado")
         if operacao == "Soma":
-            st.markdown(f"**v + w = {_fmt_vetor(v + w)}**")
+            resultado = v + w
+            st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
             passos = [Passo("Somar componente a componente", "(v + w)_i = v_i + w_i")]
         elif operacao == "Produto interno":
-            st.markdown(f"**v · w = {float(np.dot(v, w)):g}**")
+            resultado = float(np.dot(v, w))
+            st.latex(f"{simbolo_operacao} = {resultado:g}")
             passos = [Passo("Somar os produtos das componentes", "v · w = Σ v_i · w_i")]
         elif operacao == "Produto externo":
-            st.markdown(f"**v × w = {_fmt_vetor(np.cross(v, w))}**")
+            resultado = np.cross(v, w)
+            st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
             passos = [Passo("Calcular o produto vetorial", "v × w é perpendicular a v e a w (só definido em 3D)")]
         elif operacao == "Norma":
-            st.markdown(f"**‖v‖ = {float(np.linalg.norm(v)):g}**")
+            resultado = float(np.linalg.norm(v))
+            st.latex(f"{simbolo_operacao} = {resultado:g}")
             passos = [Passo("Raiz quadrada da soma dos quadrados", "‖v‖ = √(Σ v_i²)")]
         else:  # Teste de ortogonalidade
             produto = float(np.dot(v, w))
             ortogonais = abs(produto) < 1e-9
-            st.markdown(f"**v · w = {produto:.4g}** → {'✅ ortogonais' if ortogonais else '❌ não ortogonais'}")
+            st.latex(f"{simbolo_operacao} = {produto:.4g}")
+            st.markdown("✅ **Ortogonais**" if ortogonais else "❌ **Não ortogonais**")
             passos = [Passo("Calcular v · w", "Se v · w = 0, os vetores são ortogonais.")]
 
     if mostrar_passo_a_passo and passos:
@@ -67,13 +136,11 @@ def render() -> None:
 
     st.divider()
     st.markdown("##### 📈 Visualização")
-    if dimensao == 2:
-        fig = figura_vetores_2d([("v", v, CORES[0]), ("w", w, CORES[1])])
-    else:
-        fig = figura_vetores_3d([("v", v, CORES[0]), ("w", w, CORES[1])])
+    vetores_fig = [(nome, vetores[nome], CORES[i % len(CORES)]) for i, nome in enumerate(nomes)]
+    fig = figura_vetores_2d(vetores_fig) if dimensao == 2 else figura_vetores_3d(vetores_fig)
     st.plotly_chart(fig, width="stretch")
 
-    st.markdown("##### 🎬 Ver k·v em tempo real")
+    st.markdown(f"##### 🎬 Ver k·{nome_v} em tempo real")
     valores_k = np.linspace(-2, 2, n_frames(modo_leve_da_sessao()))
     fig_anim = figura_vetor_escalado(v, valores_k, modo_leve=modo_leve_da_sessao())
     st.plotly_chart(fig_anim, width="stretch")

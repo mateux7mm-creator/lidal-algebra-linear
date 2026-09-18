@@ -45,19 +45,20 @@ def cabecalho(icone_titulo: str, descricao: str) -> None:
     st.caption(descricao)
 
 
-def _config_colunas_numericas(n_colunas: int) -> dict:
-    return {str(i): st.column_config.NumberColumn(label=f"col. {i + 1}", format="%.2f", width="small")
-            for i in range(n_colunas)}
-
-
 def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "Matriz",
-                  valor_defeito: np.ndarray | None = None, permitir_redimensionar: bool = True) -> np.ndarray:
+                  valor_defeito: np.ndarray | None = None, permitir_redimensionar: bool = True,
+                  quadrada: bool = False) -> np.ndarray:
     """Editor de células para uma matriz, com rótulos "1ª linha"/"1ª coluna",
     pré-visualização simbólica ao vivo, e (se `permitir_redimensionar`) botões
-    para adicionar/remover linhas e colunas. Devolve um numpy.ndarray."""
+    para adicionar/remover linhas e colunas. Com `quadrada=True` (ex.
+    Determinantes, Valores Próprios), um único par de botões "➕/➖ Dimensão"
+    cresce/encolhe linhas e colunas em conjunto, mantendo a matriz quadrada.
+    Devolve um numpy.ndarray."""
     chave_dados = f"{chave}_dados"
     chave_versao = f"{chave}_versao"
     if chave_dados not in st.session_state:
+        if quadrada:
+            linhas = colunas = max(linhas, colunas)
         if valor_defeito is None or valor_defeito.shape != (linhas, colunas):
             valor_defeito = np.eye(max(linhas, colunas))[:linhas, :colunas]
         st.session_state[chave_dados] = valor_defeito.astype(float)
@@ -70,7 +71,20 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
         col_titulo, col_botoes = st.columns([2, 3])
         with col_titulo:
             st.markdown(f"**{titulo}** · {n_linhas}×{n_colunas}")
-        if permitir_redimensionar:
+        if permitir_redimensionar and quadrada:
+            with col_botoes:
+                c1, c2 = st.columns(2)
+                if c1.button("➕ Dimensão", key=f"{chave}_add_dim", width="stretch"):
+                    nova = np.vstack([dados, np.zeros((1, n_colunas))])
+                    nova = np.hstack([nova, np.zeros((n_linhas + 1, 1))])
+                    st.session_state[chave_dados] = nova
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+                if c2.button("➖ Dimensão", key=f"{chave}_rem_dim", width="stretch", disabled=n_linhas <= 1):
+                    st.session_state[chave_dados] = dados[:-1, :-1]
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+        elif permitir_redimensionar:
             with col_botoes:
                 c1, c2, c3, c4 = st.columns(4)
                 if c1.button("➕ Linha", key=f"{chave}_add_l", width="stretch"):
@@ -112,19 +126,24 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
 
 def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
                  valor_defeito: np.ndarray | None = None) -> np.ndarray:
-    """Editor de células para um vetor de `dimensao` componentes."""
+    """Editor de células para um vetor de `dimensao` componentes, com
+    pré-visualização simbólica ao vivo (mesmo estilo de `matriz_input`)."""
     if valor_defeito is None or len(valor_defeito) != dimensao:
         valor_defeito = np.ones(dimensao)
     with st.container(border=True):
         st.markdown(f"**{titulo}** · {dimensao}D")
+        df = pd.DataFrame([valor_defeito], columns=[f"{i + 1}ª coluna" for i in range(dimensao)])
         editado = st.data_editor(
-            valor_defeito.reshape(1, -1),
+            df,
             key=f"{chave}_{dimensao}d",
             num_rows="fixed",
             hide_index=True,
-            column_config=_config_colunas_numericas(dimensao),
+            column_config={c: st.column_config.NumberColumn(format="%.2f") for c in df.columns},
         )
-    return np.array(editado, dtype=float).reshape(-1)
+        vetor = np.array(editado, dtype=float).reshape(-1)
+        st.caption("Forma simbólica")
+        st.latex(sp.latex(sp.Matrix(np.round(vetor, 4).tolist())))
+    return vetor
 
 
 def modo_passo_a_passo_ativo(chave_pagina: str) -> bool:

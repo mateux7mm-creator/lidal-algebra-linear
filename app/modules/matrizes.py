@@ -85,19 +85,25 @@ def render() -> None:
             st.markdown("**Escalar k**")
             k = st.number_input("k", value=2.0, step=0.5, label_visibility="collapsed")
 
+    latex_a = sp.latex(sp.Matrix(np.round(a, 4).tolist()))
+    latex_b = sp.latex(sp.Matrix(np.round(b, 4).tolist())) if b is not None else None
+    if operacao == "Soma":
+        latex_operandos = f"{latex_a} + {latex_b}"
+    elif operacao == "Produto matricial":
+        latex_operandos = f"{latex_a} \\times {latex_b}"
+    elif operacao == "Produto escalar":
+        latex_operandos = f"{sp.latex(sp.nsimplify(k))} \\cdot {latex_a}"
+    elif operacao == "Transposição":
+        latex_operandos = f"{latex_a}^T"
+    elif operacao == "Inversa":
+        latex_operandos = f"{latex_a}^{{-1}}"
+    else:  # Escalonamento — não é uma expressão binária, só a matriz de partida
+        latex_operandos = latex_a
+
     with st.container(border=True):
         st.markdown("##### 🔎 Operandos escolhidos")
-        if b is not None:
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.caption(f"Matriz {nome_a}")
-                st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
-            with col_b:
-                st.caption(f"Matriz {nome_b}")
-                st.latex(sp.latex(sp.Matrix(np.round(b, 4).tolist())))
-        else:
-            st.caption(f"Matriz {nome_a}")
-            st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
+        st.caption(f"Matriz {nome_a}" + (f" e Matriz {nome_b}" if b is not None else ""))
+        st.latex(latex_operandos)
 
     a_sp = simbolico.para_sympy(a)
     try:
