@@ -47,7 +47,7 @@ def render() -> None:
 
     col_esquerda, col_direita = st.columns([2, 3])
 
-    with col_esquerda:
+    with col_esquerda, st.container(height=650):
         col_dim, col_toggle = st.columns([2, 1])
         with col_dim:
             dimensao = st.radio("Dimensão", [2, 3], horizontal=True, format_func=lambda d: f"{d}D")
@@ -162,7 +162,7 @@ def render() -> None:
         if mostrar_passo_a_passo and passos:
             mostrar_passos(passos)
 
-    with col_direita:
+    with col_direita, st.container(height=650):
         st.markdown("##### 📈 Visualização")
         vetores_fig = [(nome, vetores[nome], CORES[i % len(CORES)]) for i, nome in enumerate(nomes)]
         fig = figura_vetores_2d(vetores_fig) if dimensao == 2 else figura_vetores_3d(vetores_fig)

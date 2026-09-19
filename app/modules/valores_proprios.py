@@ -40,7 +40,7 @@ def render() -> None:
 
     col_esquerda, col_direita = st.columns([2, 3])
 
-    with col_esquerda:
+    with col_esquerda, st.container(height=650):
         col_add, col_rem = st.columns(2)
         with col_add:
             st.button("➕ Adicionar matriz", width="stretch", on_click=_adicionar_matriz,
@@ -84,7 +84,7 @@ def render() -> None:
         if mostrar_passo_a_passo:
             mostrar_passos(passos_eigen + passos_diag)
 
-    with col_direita:
+    with col_direita, st.container(height=650):
         if a.shape == (2, 2):
             st.markdown("##### 🔎 Ver a transformação a construir-se")
             valores_np, vetores_np = np.linalg.eig(a)

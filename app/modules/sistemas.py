@@ -69,7 +69,7 @@ def render() -> None:
 
     col_esquerda, col_direita = st.columns([2, 3])
 
-    with col_esquerda:
+    with col_esquerda, st.container(height=650):
         st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
                        placeholder="ex.: x, y")
 
@@ -128,7 +128,7 @@ def render() -> None:
         if st.session_state["sistemas_passo_a_passo"]:
             mostrar_passos(passos + passos_resolucao)
 
-    with col_direita:
+    with col_direita, st.container(height=650):
         if n_variaveis == 2:
             st.markdown("##### 📈 Interpretação gráfica")
             equacoes_visiveis = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)

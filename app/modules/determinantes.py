@@ -40,7 +40,7 @@ def render() -> None:
 
     col_esquerda, col_direita = st.columns([2, 3])
 
-    with col_esquerda:
+    with col_esquerda, st.container(height=650):
         col_add, col_rem = st.columns(2)
         with col_add:
             st.button("➕ Adicionar matriz", width="stretch", on_click=_adicionar_matriz,
@@ -87,7 +87,7 @@ def render() -> None:
         if mostrar_passo_a_passo:
             mostrar_passos(passos_det + passos_inv)
 
-    with col_direita:
+    with col_direita, st.container(height=650):
         if a.shape == (2, 2):
             st.markdown("##### 🔎 Ver a matriz a tornar-se singular")
             posicoes = {"a11": (0, 0), "a12": (0, 1), "a21": (1, 0), "a22": (1, 1)}

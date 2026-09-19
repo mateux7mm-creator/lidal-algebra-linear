@@ -72,6 +72,10 @@ def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
     não à margem do gráfico como o Plotly faz por omissão — mais parecido
     com o GeoGebra. `dtick` é fixado ao mesmo valor "redondo" usado para
     gerar essas anotações, para a grelha ficar alinhada com os números.
+
+    A legenda fica horizontal, por cima do gráfico (em vez de vertical à
+    direita, que é o omissão do Plotly) — liberta espaço horizontal para a
+    área do gráfico em si.
     """
     dtick = _dtick_legivel(intervalo[1] - intervalo[0])
     eixo = dict(range=list(intervalo), showgrid=True, gridcolor="#e3e3e3", gridwidth=1,
@@ -83,6 +87,7 @@ def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
         plot_bgcolor="white",
         paper_bgcolor="white",
         font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
 
 
@@ -218,7 +223,8 @@ def figura_vetores_3d(vetores: list[tuple[str, np.ndarray, str]], titulo: str = 
     eixo3d = dict(gridcolor="#e3e3e3", zerolinecolor="#444444", backgroundcolor="white")
     fig.update_layout(title=titulo, paper_bgcolor="white",
                        font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
-                       scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d))
+                       scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d),
+                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
     return fig
 
 
@@ -252,6 +258,7 @@ def figura_vetor_parametrizado(
         fig.update_layout(
             paper_bgcolor="white", font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
             scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d),
+            legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
             **_layout_com_slider(valores_parametro, rotulo_parametro),
         )
         return fig

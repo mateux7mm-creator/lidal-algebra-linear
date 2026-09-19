@@ -51,7 +51,7 @@ def render() -> None:
                         for i in range(st.session_state["exploracao_n_eq"])]
     nomes_parametros = sorted(set().union(*(detetar_parametros(t) for t in textos_equacoes)))
 
-    with col_menu:
+    with col_menu, st.container(height=650):
         st.markdown("##### ✏️ Equações")
         st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a·x (com slider para a)")
         for i in range(st.session_state["exploracao_n_eq"]):
@@ -86,7 +86,7 @@ def render() -> None:
     valores_parametros = {nome: st.session_state.get(f"exploracao_param_{nome}", 1.0)
                            for nome in nomes_parametros}
 
-    with col_grafico:
+    with col_grafico, st.container(height=650):
         curvas, erros = [], []
         for i, texto in enumerate(textos_equacoes):
             if not st.session_state.get(f"exploracao_eq_mostrar_{i}", True):
