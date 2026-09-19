@@ -38,11 +38,11 @@ def barra_menus(menus: dict[str, Callable[[], None]]) -> None:
                 desenhar_conteudo()
 
 
-def cabecalho(icone_titulo: str, descricao: str) -> None:
-    """Título da página + uma frase curta a explicar o que o módulo faz.
-    Uso: cabecalho("🔢 Matrizes", "Soma, produto escalar, produto matricial e transposição.")"""
+def cabecalho(icone_titulo: str) -> None:
+    """Título da página — só o título, sem legenda: uma vez dentro do
+    módulo, a descrição já não acrescenta nada e só ocupa espaço.
+    Uso: cabecalho("🔢 Matrizes")"""
     st.title(icone_titulo)
-    st.caption(descricao)
 
 
 def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "Matriz",

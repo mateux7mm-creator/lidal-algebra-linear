@@ -35,7 +35,7 @@ def _remover_ultima_matriz() -> None:
 
 
 def render() -> None:
-    cabecalho("➗ Determinantes e Matriz Inversa", "Cálculo e deteção de matrizes singulares.")
+    cabecalho("➗ Determinantes e Matriz Inversa")
     _inicializar_estado()
 
     col_esquerda, col_direita = st.columns([2, 3])

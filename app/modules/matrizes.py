@@ -43,8 +43,7 @@ def _remover_ultima_matriz() -> None:
 
 
 def render() -> None:
-    cabecalho("🔢 Matrizes",
-              "Soma, produto escalar, produto matricial, transposição, escalonamento e inversa.")
+    cabecalho("🔢 Matrizes")
     _inicializar_estado()
 
     # Ao contrário dos outros módulos, aqui só uma operação (Produto escalar,

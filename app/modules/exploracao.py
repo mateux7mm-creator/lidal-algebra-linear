@@ -42,7 +42,7 @@ def _repor_exemplos() -> None:
 
 
 def render() -> None:
-    cabecalho("🧭 Exploração Gráfica", "Escreve equações em x e y — como no GeoGebra — e vê o gráfico ao vivo.")
+    cabecalho("🧭 Exploração Gráfica")
     _inicializar_estado()
 
     col_menu, col_grafico = st.columns([1, 2.2])

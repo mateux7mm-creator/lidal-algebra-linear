@@ -91,7 +91,7 @@ EXEMPLOS = {
 
 
 def render() -> None:
-    cabecalho("📖 Conteúdo", "Teoria, exemplos e figuras por tópico — como um e-book.")
+    cabecalho("📖 Conteúdo")
     nome_topico = st.selectbox("Tópico", list(TOPICOS.keys()))
     slug = TOPICOS[nome_topico]
 

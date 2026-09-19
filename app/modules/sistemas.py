@@ -64,7 +64,7 @@ def _menu_exportar(a: sp.Matrix, b: sp.Matrix, simbolos: list) -> None:
 
 
 def render() -> None:
-    cabecalho("📐 Sistemas Lineares", "Escreve as equações em texto — como no papel.")
+    cabecalho("📐 Sistemas Lineares")
     _inicializar_estado()
 
     col_esquerda, col_direita = st.columns([2, 3])

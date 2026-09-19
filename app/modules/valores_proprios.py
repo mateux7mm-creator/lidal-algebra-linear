@@ -35,7 +35,7 @@ def _remover_ultima_matriz() -> None:
 
 
 def render() -> None:
-    cabecalho("🌀 Valores e Vetores Próprios", "Cálculo e visualização da transformação linear.")
+    cabecalho("🌀 Valores e Vetores Próprios")
     _inicializar_estado()
 
     col_esquerda, col_direita = st.columns([2, 3])

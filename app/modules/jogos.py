@@ -73,7 +73,7 @@ def _pontos_por_tempo(inicio: float) -> int:
 
 
 def render() -> None:
-    cabecalho("🎮 Jogos e Desafios", "Pratica os conteúdos de forma gamificada, sozinho ou em turma.")
+    cabecalho("🎮 Jogos e Desafios")
 
     with st.sidebar:
         st.divider()

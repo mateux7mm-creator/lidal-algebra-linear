@@ -42,7 +42,7 @@ def _remover_ultimo_vetor() -> None:
 
 
 def render() -> None:
-    cabecalho("➡️ Vetores", "Operações vetoriais e visualização 2D/3D.")
+    cabecalho("➡️ Vetores")
     _inicializar_estado()
 
     col_esquerda, col_direita = st.columns([2, 3])
