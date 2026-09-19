@@ -9,6 +9,7 @@ st.set_page_config(
     page_title="Laboratório Digital de Álgebra Linear",
     page_icon="🧮",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 injetar_css()

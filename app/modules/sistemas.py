@@ -67,109 +67,113 @@ def render() -> None:
     cabecalho("📐 Sistemas Lineares", "Escreve as equações em texto — como no papel.")
     _inicializar_estado()
 
-    st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
-                   placeholder="ex.: x, y")
+    col_esquerda, col_direita = st.columns([2, 3])
 
-    st.markdown("**Equações**")
-    for i in range(st.session_state["sistemas_n_eq"]):
-        chave = f"sistemas_eq_{i}"
-        chave_mostrar = f"sistemas_eq_mostrar_{i}"
-        st.session_state.setdefault(chave, "")
-        st.session_state.setdefault(chave_mostrar, True)
-        col_eq, col_mostrar = st.columns([4, 1])
-        with col_eq:
-            st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: 2x + 4y = 6",
-                           label_visibility="collapsed")
-        with col_mostrar:
-            st.checkbox("Mostrar no gráfico", key=chave_mostrar)
+    with col_esquerda:
+        st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
+                       placeholder="ex.: x, y")
 
-    textos_equacoes = [st.session_state[f"sistemas_eq_{i}"] for i in range(st.session_state["sistemas_n_eq"])]
-
-    try:
-        a_sp, b_sp, simbolos, passos = simbolico.analisar_equacoes(
-            st.session_state["sistemas_variaveis"], textos_equacoes
-        )
-    except ValueError as erro:
-        st.error(str(erro))
-        return
-
-    barra_menus({
-        "Equações": _menu_equacoes,
-        "Ver": _menu_ver,
-        "Exportar": lambda: _menu_exportar(a_sp, b_sp, simbolos),
-    })
-
-    n_variaveis = len(simbolos)
-    a = simbolico.para_numpy(a_sp)
-    b = simbolico.para_numpy(b_sp).reshape(-1)
-    n_equacoes = a.shape[0]
-    sistema_2x2 = (n_equacoes, n_variaveis) == (2, 2)
-
-    solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp, simbolos)
-    classificacao = simbolico.classificar_sistema(solucoes, simbolos)
-    rotulo_classificacao = {
-        "determinado": "✅ Sistema possível e determinado — solução única",
-        "indeterminado": "♾️ Sistema possível e indeterminado — infinitas soluções",
-        "impossivel": "🚫 Sistema impossível — não tem solução",
-    }[classificacao]
-
-    with st.container(border=True):
-        st.markdown("##### Resultado")
-        st.markdown(f"**Classificação:** {rotulo_classificacao}")
-        solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
-        if solucao_latex is not None:
-            st.markdown("**Solução:**")
-            st.latex(solucao_latex)
-
-    if st.session_state["sistemas_passo_a_passo"]:
-        mostrar_passos(passos + passos_resolucao)
-
-    if n_variaveis == 2:
-        st.divider()
-        st.markdown("##### 📈 Interpretação gráfica")
-        equacoes_visiveis = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)
-                              if st.session_state.get(f"sistemas_eq_mostrar_{i}", True)]
-        if equacoes_visiveis:
-            st.plotly_chart(figura_retas_2d(equacoes_visiveis, modo_leve=modo_leve_da_sessao()), width="stretch",
-                             key="sistemas_grafico_principal")
-        else:
-            st.caption("Nenhuma equação selecionada para mostrar no gráfico — "
-                       "marca a caixa \"Mostrar no gráfico\" junto de pelo menos uma equação.")
-
-        if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
-            st.markdown("##### 🔎 Ver a reta e a interseção a variar")
-            col_eq, col_coef = st.columns(2)
+        st.markdown("**Equações**")
+        for i in range(st.session_state["sistemas_n_eq"]):
+            chave = f"sistemas_eq_{i}"
+            chave_mostrar = f"sistemas_eq_mostrar_{i}"
+            st.session_state.setdefault(chave, "")
+            st.session_state.setdefault(chave_mostrar, True)
+            col_eq, col_mostrar = st.columns([4, 1])
             with col_eq:
-                eq_variavel = st.selectbox("Equação a variar", ["1ª equação", "2ª equação"], index=1)
-            indice_eq = 0 if eq_variavel.startswith("1") else 1
-            indice_fixa = 1 - indice_eq
-            with col_coef:
-                coef_variavel = st.selectbox(
-                    "Coeficiente a variar",
-                    [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
-                )
-            indice_coef = 0 if coef_variavel.endswith(str(simbolos[0])) else 1
-            valor_atual = float(a[indice_eq, indice_coef])
+                st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: 2x + 4y = 6",
+                               label_visibility="collapsed")
+            with col_mostrar:
+                st.checkbox("Mostrar no gráfico", key=chave_mostrar)
 
-            def calcular_equacao_variavel(valor, indice_eq=indice_eq, indice_coef=indice_coef):
-                linha = [a[indice_eq, 0], a[indice_eq, 1]]
-                linha[indice_coef] = valor
-                return (linha[0], linha[1], b[indice_eq])
+        textos_equacoes = [st.session_state[f"sistemas_eq_{i}"]
+                            for i in range(st.session_state["sistemas_n_eq"])]
 
-            equacao_fixa = (a[indice_fixa, 0], a[indice_fixa, 1], b[indice_fixa])
-            rotulos_equacoes = (f"Eq. {indice_fixa + 1}", f"Eq. {indice_eq + 1}")
-
-            st.caption("Arrasta o slider ou carrega em ▶ Play para ver a reta e a interseção a variar.")
-            fig = figura_retas_2d_parametrizada(
-                equacao_fixa, calcular_equacao_variavel,
-                np.linspace(valor_atual - 3, valor_atual + 3, 30),
-                rotulo_parametro=f"coef. de {simbolos[indice_coef]} (eq. {indice_eq + 1})",
-                modo_leve=modo_leve_da_sessao(), rotulos_equacoes=rotulos_equacoes,
+        try:
+            a_sp, b_sp, simbolos, passos = simbolico.analisar_equacoes(
+                st.session_state["sistemas_variaveis"], textos_equacoes
             )
-            st.plotly_chart(fig, width="stretch", key="sistemas_grafico_exploracao")
-        elif not sistema_2x2:
-            st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
-                       "2 equações e 2 incógnitas.")
-    elif n_variaveis == 3:
-        st.info("A visualização 3D da interseção de planos ficará disponível numa iteração seguinte "
-                 "— a resolução simbólica acima já funciona para 3 variáveis.")
+        except ValueError as erro:
+            st.error(str(erro))
+            return
+
+        barra_menus({
+            "Equações": _menu_equacoes,
+            "Ver": _menu_ver,
+            "Exportar": lambda: _menu_exportar(a_sp, b_sp, simbolos),
+        })
+
+        n_variaveis = len(simbolos)
+        a = simbolico.para_numpy(a_sp)
+        b = simbolico.para_numpy(b_sp).reshape(-1)
+        n_equacoes = a.shape[0]
+        sistema_2x2 = (n_equacoes, n_variaveis) == (2, 2)
+
+        solucoes, passos_resolucao = simbolico.resolver_sistema(a_sp, b_sp, simbolos)
+        classificacao = simbolico.classificar_sistema(solucoes, simbolos)
+        rotulo_classificacao = {
+            "determinado": "✅ Sistema possível e determinado — solução única",
+            "indeterminado": "♾️ Sistema possível e indeterminado — infinitas soluções",
+            "impossivel": "🚫 Sistema impossível — não tem solução",
+        }[classificacao]
+
+        with st.container(border=True):
+            st.markdown("##### Resultado")
+            st.markdown(f"**Classificação:** {rotulo_classificacao}")
+            solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
+            if solucao_latex is not None:
+                st.markdown("**Solução:**")
+                st.latex(solucao_latex)
+
+        if st.session_state["sistemas_passo_a_passo"]:
+            mostrar_passos(passos + passos_resolucao)
+
+    with col_direita:
+        if n_variaveis == 2:
+            st.markdown("##### 📈 Interpretação gráfica")
+            equacoes_visiveis = [(a[i, 0], a[i, 1], b[i]) for i in range(n_equacoes)
+                                  if st.session_state.get(f"sistemas_eq_mostrar_{i}", True)]
+            if equacoes_visiveis:
+                st.plotly_chart(figura_retas_2d(equacoes_visiveis, modo_leve=modo_leve_da_sessao()),
+                                 width="stretch", key="sistemas_grafico_principal")
+            else:
+                st.caption("Nenhuma equação selecionada para mostrar no gráfico — "
+                           "marca a caixa \"Mostrar no gráfico\" junto de pelo menos uma equação.")
+
+            if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
+                st.markdown("##### 🔎 Ver a reta e a interseção a variar")
+                col_eq, col_coef = st.columns(2)
+                with col_eq:
+                    eq_variavel = st.selectbox("Equação a variar", ["1ª equação", "2ª equação"], index=1)
+                indice_eq = 0 if eq_variavel.startswith("1") else 1
+                indice_fixa = 1 - indice_eq
+                with col_coef:
+                    coef_variavel = st.selectbox(
+                        "Coeficiente a variar",
+                        [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
+                    )
+                indice_coef = 0 if coef_variavel.endswith(str(simbolos[0])) else 1
+                valor_atual = float(a[indice_eq, indice_coef])
+
+                def calcular_equacao_variavel(valor, indice_eq=indice_eq, indice_coef=indice_coef):
+                    linha = [a[indice_eq, 0], a[indice_eq, 1]]
+                    linha[indice_coef] = valor
+                    return (linha[0], linha[1], b[indice_eq])
+
+                equacao_fixa = (a[indice_fixa, 0], a[indice_fixa, 1], b[indice_fixa])
+                rotulos_equacoes = (f"Eq. {indice_fixa + 1}", f"Eq. {indice_eq + 1}")
+
+                st.caption("Arrasta o slider ou carrega em ▶ Play para ver a reta e a interseção a variar.")
+                fig = figura_retas_2d_parametrizada(
+                    equacao_fixa, calcular_equacao_variavel,
+                    np.linspace(valor_atual - 3, valor_atual + 3, 30),
+                    rotulo_parametro=f"coef. de {simbolos[indice_coef]} (eq. {indice_eq + 1})",
+                    modo_leve=modo_leve_da_sessao(), rotulos_equacoes=rotulos_equacoes,
+                )
+                st.plotly_chart(fig, width="stretch", key="sistemas_grafico_exploracao")
+            elif not sistema_2x2:
+                st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
+                           "2 equações e 2 incógnitas.")
+        elif n_variaveis == 3:
+            st.info("A visualização 3D da interseção de planos ficará disponível numa iteração seguinte "
+                     "— a resolução simbólica acima já funciona para 3 variáveis.")

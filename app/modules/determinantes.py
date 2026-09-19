@@ -38,61 +38,67 @@ def render() -> None:
     cabecalho("➗ Determinantes e Matriz Inversa", "Cálculo e deteção de matrizes singulares.")
     _inicializar_estado()
 
-    col_add, col_rem = st.columns(2)
-    with col_add:
-        st.button("➕ Adicionar matriz", width="stretch", on_click=_adicionar_matriz, key="determinantes_btn_add")
-    with col_rem:
-        st.button("➖ Remover última matriz", width="stretch", on_click=_remover_ultima_matriz,
-                   disabled=len(st.session_state["determinantes_nomes"]) <= 1, key="determinantes_btn_rem")
+    col_esquerda, col_direita = st.columns([2, 3])
 
-    nomes = st.session_state["determinantes_nomes"]
-    matrizes: dict[str, np.ndarray] = {}
-    for nome in nomes:
-        matrizes[nome] = matriz_input(f"determinantes_{nome}", titulo=f"Matriz {nome}",
-                                       valor_defeito=VALORES_DEFEITO.get(nome), quadrada=True)
+    with col_esquerda:
+        col_add, col_rem = st.columns(2)
+        with col_add:
+            st.button("➕ Adicionar matriz", width="stretch", on_click=_adicionar_matriz,
+                       key="determinantes_btn_add")
+        with col_rem:
+            st.button("➖ Remover última matriz", width="stretch", on_click=_remover_ultima_matriz,
+                       disabled=len(st.session_state["determinantes_nomes"]) <= 1, key="determinantes_btn_rem")
 
-    st.divider()
-    col_sel, col_toggle = st.columns([2, 1])
-    with col_sel:
-        nome_a = st.selectbox("Matriz a analisar", nomes, key="determinantes_op_nome")
-    with col_toggle:
-        mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
-    a = matrizes[nome_a]
+        nomes = st.session_state["determinantes_nomes"]
+        matrizes: dict[str, np.ndarray] = {}
+        for nome in nomes:
+            matrizes[nome] = matriz_input(f"determinantes_{nome}", titulo=f"Matriz {nome}",
+                                           valor_defeito=VALORES_DEFEITO.get(nome), quadrada=True)
 
-    with st.container(border=True):
-        st.markdown("##### 🔎 Matriz escolhida")
-        st.caption(f"Matriz {nome_a}")
-        st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
-
-    a_sp = simbolico.para_sympy(a)
-    det_sp, passos_det = simbolico.determinante(a_sp)
-    inversa_sp, passos_inv = simbolico.inversa(a_sp)
-
-    with st.container(border=True):
-        st.markdown("##### ✅ Resultado")
-        col_det, col_inv = st.columns(2)
-        with col_det:
-            st.metric("Determinante", f"{float(det_sp):.4g}")
-        with col_inv:
-            if inversa_sp is None:
-                st.warning("Matriz singular — não tem inversa.")
-            else:
-                st.caption("Matriz inversa")
-                st.latex(sp.latex(inversa_sp))
-
-    if mostrar_passo_a_passo:
-        mostrar_passos(passos_det + passos_inv)
-
-    if a.shape == (2, 2):
         st.divider()
-        st.markdown("##### 🔎 Ver a matriz a tornar-se singular")
-        posicoes = {"a11": (0, 0), "a12": (0, 1), "a21": (1, 0), "a22": (1, 1)}
-        rotulo_entrada = st.selectbox("Entrada a variar", list(posicoes.keys()), index=3)
-        posicao = posicoes[rotulo_entrada]
-        st.caption("Arrasta o slider ou carrega em ▶ Play para ver o paralelogramo a degenerar.")
-        fig = figura_transformacao_parametrizada(
-            lambda valor: simbolico.matriz_com_entrada_variavel(a, posicao, valor),
-            np.linspace(-3, 3, 30), rotulo_parametro=rotulo_entrada, mostrar_area=True,
-            modo_leve=modo_leve_da_sessao(),
-        )
-        st.plotly_chart(fig, width="stretch")
+        col_sel, col_toggle = st.columns([2, 1])
+        with col_sel:
+            nome_a = st.selectbox("Matriz a analisar", nomes, key="determinantes_op_nome")
+        with col_toggle:
+            mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
+        a = matrizes[nome_a]
+
+        with st.container(border=True):
+            st.markdown("##### 🔎 Matriz escolhida")
+            st.caption(f"Matriz {nome_a}")
+            st.latex(sp.latex(sp.Matrix(np.round(a, 4).tolist())))
+
+        a_sp = simbolico.para_sympy(a)
+        det_sp, passos_det = simbolico.determinante(a_sp)
+        inversa_sp, passos_inv = simbolico.inversa(a_sp)
+
+        with st.container(border=True):
+            st.markdown("##### ✅ Resultado")
+            col_det, col_inv = st.columns(2)
+            with col_det:
+                st.metric("Determinante", f"{float(det_sp):.4g}")
+            with col_inv:
+                if inversa_sp is None:
+                    st.warning("Matriz singular — não tem inversa.")
+                else:
+                    st.caption("Matriz inversa")
+                    st.latex(sp.latex(inversa_sp))
+
+        if mostrar_passo_a_passo:
+            mostrar_passos(passos_det + passos_inv)
+
+    with col_direita:
+        if a.shape == (2, 2):
+            st.markdown("##### 🔎 Ver a matriz a tornar-se singular")
+            posicoes = {"a11": (0, 0), "a12": (0, 1), "a21": (1, 0), "a22": (1, 1)}
+            rotulo_entrada = st.selectbox("Entrada a variar", list(posicoes.keys()), index=3)
+            posicao = posicoes[rotulo_entrada]
+            st.caption("Arrasta o slider ou carrega em ▶ Play para ver o paralelogramo a degenerar.")
+            fig = figura_transformacao_parametrizada(
+                lambda valor: simbolico.matriz_com_entrada_variavel(a, posicao, valor),
+                np.linspace(-3, 3, 30), rotulo_parametro=rotulo_entrada, mostrar_area=True,
+                modo_leve=modo_leve_da_sessao(),
+            )
+            st.plotly_chart(fig, width="stretch")
+        else:
+            st.caption("A visualização gráfica só está disponível para matrizes 2×2.")
