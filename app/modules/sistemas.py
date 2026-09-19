@@ -138,23 +138,33 @@ def render() -> None:
 
         if sistema_2x2 and st.session_state["sistemas_mostrar_exploracao"]:
             st.markdown("##### 🔎 Ver a reta e a interseção a variar")
-            coef_variavel = st.selectbox(
-                "Coeficiente da 2ª equação a variar",
-                [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
-            )
+            col_eq, col_coef = st.columns(2)
+            with col_eq:
+                eq_variavel = st.selectbox("Equação a variar", ["1ª equação", "2ª equação"], index=1)
+            indice_eq = 0 if eq_variavel.startswith("1") else 1
+            indice_fixa = 1 - indice_eq
+            with col_coef:
+                coef_variavel = st.selectbox(
+                    "Coeficiente a variar",
+                    [f"coeficiente de {simbolos[0]}", f"coeficiente de {simbolos[1]}"], index=1,
+                )
             indice_coef = 0 if coef_variavel.endswith(str(simbolos[0])) else 1
-            valor_atual = float(a[1, indice_coef])
+            valor_atual = float(a[indice_eq, indice_coef])
 
-            def calcular_equacao_variavel(valor, indice_coef=indice_coef):
-                linha2 = [a[1, 0], a[1, 1]]
-                linha2[indice_coef] = valor
-                return (linha2[0], linha2[1], b[1])
+            def calcular_equacao_variavel(valor, indice_eq=indice_eq, indice_coef=indice_coef):
+                linha = [a[indice_eq, 0], a[indice_eq, 1]]
+                linha[indice_coef] = valor
+                return (linha[0], linha[1], b[indice_eq])
+
+            equacao_fixa = (a[indice_fixa, 0], a[indice_fixa, 1], b[indice_fixa])
+            rotulos_equacoes = (f"Eq. {indice_fixa + 1}", f"Eq. {indice_eq + 1}")
 
             st.caption("Arrasta o slider ou carrega em ▶ Play para ver a reta e a interseção a variar.")
             fig = figura_retas_2d_parametrizada(
-                (a[0, 0], a[0, 1], b[0]), calcular_equacao_variavel,
+                equacao_fixa, calcular_equacao_variavel,
                 np.linspace(valor_atual - 3, valor_atual + 3, 30),
-                rotulo_parametro=f"coef. de {simbolos[indice_coef]}", modo_leve=modo_leve_da_sessao(),
+                rotulo_parametro=f"coef. de {simbolos[indice_coef]} (eq. {indice_eq + 1})",
+                modo_leve=modo_leve_da_sessao(), rotulos_equacoes=rotulos_equacoes,
             )
             st.plotly_chart(fig, width="stretch", key="sistemas_grafico_exploracao")
         elif not sistema_2x2:

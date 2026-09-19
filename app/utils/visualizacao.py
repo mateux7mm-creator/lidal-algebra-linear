@@ -365,10 +365,14 @@ def figura_retas_2d_parametrizada(
     valores_parametro: np.ndarray,
     rotulo_parametro: str = "t",
     modo_leve: bool = False,
+    rotulos_equacoes: tuple[str, str] = ("Eq. 1", "Eq. 2"),
 ) -> go.Figure:
     """Anima a 2ª reta (calcular_equacao_variavel(parametro)) e a sua
     interseção com a 1ª reta fixa, ao longo de valores_parametro — usado
-    pela exploração de Sistemas Lineares (só sistemas 2×2)."""
+    pela exploração de Sistemas Lineares (só sistemas 2×2). `rotulos_equacoes`
+    nomeia a legenda de (equacao_fixa, equação variável) nessa ordem — para a
+    legenda continuar a mostrar o número real da equação mesmo quando é a 1ª
+    equação do sistema (e não a 2ª) que está a variar."""
     if modo_leve:
         valores_parametro = np.linspace(valores_parametro[0], valores_parametro[-1], N_FRAMES_MODO_LEVE)
 
@@ -380,7 +384,7 @@ def figura_retas_2d_parametrizada(
         dados = []
         for i, (a, b, c) in enumerate(equacoes):
             xs, ys = _pontos_reta(a, b, c, intervalo, modo_leve)
-            dados.append(go.Scatter(x=xs, y=ys, mode="lines", name=f"Eq. {i + 1}",
+            dados.append(go.Scatter(x=xs, y=ys, mode="lines", name=rotulos_equacoes[i],
                                      line=dict(color=CORES_VETORES[i % len(CORES_VETORES)], width=3)))
         a1, b1, c1 = equacao_fixa
         matriz = np.array([[a1, b1], [a2, b2]])
