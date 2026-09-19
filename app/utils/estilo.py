@@ -89,6 +89,22 @@ div[data-testid="stMetric"] {{
 div[data-testid="stMetricValue"] {{
     color: {_PRIMARIA};
 }}
+
+/* Cartões mais compactos só no módulo Jogos e Desafios (st.container(
+   key="pagina_jogos")) — os cartões e métricas do jogo (pergunta,
+   pontuação, nível, resumo) ficam menores do que o resto da app. */
+div[class*="st-key-pagina_jogos"] div[data-testid="stVerticalBlockBorderWrapper"] {{
+    padding: 0.5rem 0.75rem !important;
+}}
+div[class*="st-key-pagina_jogos"] div[data-testid="stMetric"] {{
+    padding: 0.35rem 0.5rem !important;
+}}
+div[class*="st-key-pagina_jogos"] div[data-testid="stMetricValue"] {{
+    font-size: 1.3rem !important;
+}}
+div[class*="st-key-pagina_jogos"] div[data-testid="stMetricLabel"] p {{
+    font-size: 0.75rem !important;
+}}
 </style>
 """
 

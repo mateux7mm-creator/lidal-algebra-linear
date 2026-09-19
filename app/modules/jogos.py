@@ -84,10 +84,11 @@ def render() -> None:
     modo = st.radio("Escolhe o modo", MODOS, horizontal=True, key="jogos_modo_escolhido")
     st.divider()
 
-    if modo == MODOS[0]:
-        _render_cronometrado()
-    else:
-        _render_modo_livre()
+    with st.container(key="pagina_jogos"):
+        if modo == MODOS[0]:
+            _render_cronometrado()
+        else:
+            _render_modo_livre()
 
 
 # --------------------------------------------------------------------------
