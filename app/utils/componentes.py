@@ -114,7 +114,9 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
             df,
             key=chave_editor,
             num_rows="fixed",
-            column_config={c: st.column_config.NumberColumn(format="%.2f") for c in df.columns},
+            width="content",
+            row_height=28,
+            column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
         )
         matriz = np.array(editado, dtype=float)
         st.session_state[chave_dados] = matriz
@@ -138,7 +140,9 @@ def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
             key=f"{chave}_{dimensao}d",
             num_rows="fixed",
             hide_index=True,
-            column_config={c: st.column_config.NumberColumn(format="%.2f") for c in df.columns},
+            width="content",
+            row_height=28,
+            column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
         )
         vetor = np.array(editado, dtype=float).reshape(-1)
         st.caption("Forma simbólica")
