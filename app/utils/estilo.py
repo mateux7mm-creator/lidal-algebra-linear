@@ -10,12 +10,19 @@ _TEXTO = "#1F2430"
 
 _CSS = f"""
 <style>
-/* Reduz o espaço vazio entre a barra de endereço e o título de cada página
-   — o Streamlit reserva por omissão um espaço grande no topo (e no fundo)
-   pensado para uma barra de ferramentas flutuante que esta app não usa. */
-div[data-testid="stMainBlockContainer"], div.block-container {{
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+/* Reduz o espaço vazio entre a barra de ferramentas do Streamlit (ícone de
+   "Deploy", menu ☰) e o título de cada página — o Streamlit reserva por
+   omissão um padding grande no topo (e no fundo) do bloco principal, para
+   nunca ficar tapado por essa barra. !important porque o Streamlit injeta
+   o seu próprio CSS depois deste, com a mesma especificidade. */
+div[data-testid="stMainBlockContainer"],
+div[data-testid="stAppViewContainer"] .block-container,
+div.block-container {{
+    padding-top: 3rem !important;
+    padding-bottom: 2rem !important;
+}}
+div[data-testid="stHeader"] {{
+    height: 3rem;
 }}
 
 /* Cartões (st.container(border=True)) — usados nos cabeçalhos de módulo,
