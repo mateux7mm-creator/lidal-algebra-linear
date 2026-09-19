@@ -109,35 +109,38 @@ def render() -> None:
             st.caption(f"Matriz {nome_a}" + (f" e Matriz {nome_b}" if b is not None else ""))
             st.latex(latex_operandos)
 
-        a_sp = simbolico.para_sympy(a)
-        try:
-            if operacao == "Soma":
-                resultado_sp, passos = simbolico.somar_matrizes(a_sp, simbolico.para_sympy(b))
-            elif operacao == "Produto matricial":
-                resultado_sp, passos = simbolico.multiplicar_matrizes(a_sp, simbolico.para_sympy(b))
-            elif operacao == "Produto escalar":
-                resultado_sp, passos = simbolico.multiplicar_escalar(k, a_sp)
-            elif operacao == "Transposição":
-                resultado_sp, passos = simbolico.transpor(a_sp)
-            elif operacao == "Escalonamento":
-                resultado_sp, passos = simbolico.escalonar(a_sp)
-            else:  # Inversa
-                resultado_sp, passos = simbolico.inversa(a_sp)
-                if resultado_sp is None:
-                    st.warning("A matriz é singular (det = 0) — não tem inversa.")
-                    if mostrar_passo_a_passo:
-                        mostrar_passos(passos)
-                    return
-        except ValueError as erro:
+    a_sp = simbolico.para_sympy(a)
+    try:
+        if operacao == "Soma":
+            resultado_sp, passos = simbolico.somar_matrizes(a_sp, simbolico.para_sympy(b))
+        elif operacao == "Produto matricial":
+            resultado_sp, passos = simbolico.multiplicar_matrizes(a_sp, simbolico.para_sympy(b))
+        elif operacao == "Produto escalar":
+            resultado_sp, passos = simbolico.multiplicar_escalar(k, a_sp)
+        elif operacao == "Transposição":
+            resultado_sp, passos = simbolico.transpor(a_sp)
+        elif operacao == "Escalonamento":
+            resultado_sp, passos = simbolico.escalonar(a_sp)
+        else:  # Inversa
+            resultado_sp, passos = simbolico.inversa(a_sp)
+    except ValueError as erro:
+        with col_direita, st.container(height=650):
             st.error(str(erro))
+        return
+
+    with col_direita, st.container(height=650):
+        if resultado_sp is None:
+            st.warning("A matriz é singular (det = 0) — não tem inversa.")
+            if mostrar_passo_a_passo:
+                mostrar_passos(passos)
             return
 
         mostrar_resultado(numerico=simbolico.para_numpy(resultado_sp), simbolico_latex=sp.latex(resultado_sp))
         if mostrar_passo_a_passo:
             mostrar_passos(passos)
 
-    with col_direita, st.container(height=650):
         if operacao == "Produto escalar" and a.shape == (2, 2):
+            st.divider()
             st.markdown("##### 🔎 Ver o efeito de k·A")
             st.caption("Arrasta o slider ou carrega em ▶ Play para ver a grelha a transformar-se.")
             fig = figura_transformacao_parametrizada(
@@ -145,6 +148,3 @@ def render() -> None:
                 modo_leve=modo_leve_da_sessao(),
             )
             st.plotly_chart(fig, width="stretch")
-        else:
-            st.caption("Esta operação não tem visualização gráfica — escolhe \"Produto escalar\" "
-                       "com uma matriz 2×2 para veres a grelha a transformar-se.")
