@@ -25,6 +25,17 @@ div[data-testid="stHeader"] {{
     height: 3rem;
 }}
 
+/* Reduz o espaçamento vertical entre elementos dentro do conteúdo (títulos,
+   inputs, divisores, gráficos, ...) — o Streamlit usa por omissão um
+   espaçamento generoso pensado para páginas mais simples que as deste
+   laboratório, com várias secções empilhadas por módulo. */
+div[data-testid="stVerticalBlock"] {{
+    gap: 0.6rem !important;
+}}
+hr {{
+    margin: 0.75rem 0 !important;
+}}
+
 /* Cartões (st.container(border=True)) — usados nos cabeçalhos de módulo,
    nos blocos "Resultado"/"Operandos escolhidos" e nos cartões da Início. */
 div[data-testid="stVerticalBlockBorderWrapper"] {{

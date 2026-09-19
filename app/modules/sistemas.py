@@ -15,6 +15,7 @@ from utils.componentes import (
     barra_menus,
     cabecalho,
     modo_leve_da_sessao,
+    modo_passo_a_passo_ativo,
     mostrar_passos,
 )
 from utils.visualizacao import figura_retas_2d, figura_retas_2d_parametrizada
@@ -52,7 +53,6 @@ def _menu_equacoes() -> None:
 
 def _menu_ver() -> None:
     st.caption("Opções de visualização")
-    st.toggle("Mostrar modo passo-a-passo", key="sistemas_passo_a_passo")
     st.toggle("Mostrar exploração animada", key="sistemas_mostrar_exploracao")
 
 
@@ -70,8 +70,12 @@ def render() -> None:
     col_esquerda, col_direita = st.columns([2, 3])
 
     with col_esquerda, st.container(height=650):
-        st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
-                       placeholder="ex.: x, y")
+        col_vars, col_toggle = st.columns([2, 1])
+        with col_vars:
+            st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
+                           placeholder="ex.: x, y")
+        with col_toggle:
+            mostrar_passo_a_passo = modo_passo_a_passo_ativo("sistemas")
 
         st.markdown("**Equações**")
         for i in range(st.session_state["sistemas_n_eq"]):
@@ -125,7 +129,7 @@ def render() -> None:
                 st.markdown("**Solução:**")
                 st.latex(solucao_latex)
 
-        if st.session_state["sistemas_passo_a_passo"]:
+        if mostrar_passo_a_passo:
             mostrar_passos(passos + passos_resolucao)
 
     with col_direita, st.container(height=650):

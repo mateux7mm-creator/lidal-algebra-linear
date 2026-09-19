@@ -47,7 +47,9 @@ def render() -> None:
               "Soma, produto escalar, produto matricial, transposição, escalonamento e inversa.")
     _inicializar_estado()
 
-    col_esquerda, col_direita = st.columns([2, 3])
+    # Ao contrário dos outros módulos, aqui só uma operação (Produto escalar,
+    # matriz 2×2) tem gráfico — a coluna do conteúdo fica maior.
+    col_esquerda, col_direita = st.columns([3, 2])
 
     with col_esquerda, st.container(height=650):
         col_add, col_rem = st.columns(2)
