@@ -45,10 +45,21 @@ def cabecalho(icone_titulo: str) -> None:
     st.title(icone_titulo)
 
 
+def legenda_centrada(texto: str) -> None:
+    """Rótulo pequeno e centrado, mesmo estilo do st.caption mas centrado —
+    usado acima/ao lado de conteúdo em LaTeX (ex. "Forma simbólica",
+    "Numérico"/"Simbólico"), em vez do alinhamento à esquerda por omissão."""
+    st.markdown(
+        f"<p style='text-align:center; color:rgba(49,51,63,0.6); "
+        f"font-size:0.875rem; margin-bottom:0.25rem;'>{texto}</p>",
+        unsafe_allow_html=True,
+    )
+
+
 def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "Matriz",
                   valor_defeito: np.ndarray | None = None, permitir_redimensionar: bool = True,
                   quadrada: bool = False) -> np.ndarray:
-    """Editor de células para uma matriz, com rótulos "1ª linha"/"1ª coluna",
+    """Editor de células para uma matriz, com rótulos "1ª lin"/"1ª col",
     pré-visualização simbólica ao vivo, e (se `permitir_redimensionar`) botões
     para adicionar/remover linhas e colunas. Com `quadrada=True` (ex.
     Determinantes, Valores Próprios), um único par de botões "➕/➖ Dimensão"
@@ -111,8 +122,8 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
         with col_tabela:
             df = pd.DataFrame(
                 dados,
-                index=[f"{i + 1}ª linha" for i in range(n_linhas)],
-                columns=[f"{i + 1}ª coluna" for i in range(n_colunas)],
+                index=[f"{i + 1}ª lin" for i in range(n_linhas)],
+                columns=[f"{i + 1}ª col" for i in range(n_colunas)],
             )
             chave_editor = f"{chave}_editor_{st.session_state[chave_versao]}"
             editado = st.data_editor(
@@ -126,7 +137,7 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
             matriz = np.array(editado, dtype=float)
             st.session_state[chave_dados] = matriz
         with col_simbolica:
-            st.caption("Forma simbólica")
+            legenda_centrada("Forma simbólica")
             st.latex(sp.latex(sp.Matrix(np.round(matriz, 4).tolist())))
     return matriz
 
@@ -141,7 +152,7 @@ def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
         st.markdown(f"**{titulo}** · {dimensao}D")
         col_tabela, col_simbolica = st.columns(2)
         with col_tabela:
-            df = pd.DataFrame([valor_defeito], columns=[f"{i + 1}ª coluna" for i in range(dimensao)])
+            df = pd.DataFrame([valor_defeito], columns=[f"{i + 1}ª col" for i in range(dimensao)])
             editado = st.data_editor(
                 df,
                 key=f"{chave}_{dimensao}d",
@@ -153,7 +164,7 @@ def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
             )
             vetor = np.array(editado, dtype=float).reshape(-1)
         with col_simbolica:
-            st.caption("Forma simbólica")
+            legenda_centrada("Forma simbólica")
             st.latex(sp.latex(sp.Matrix(np.round(vetor, 4).tolist())))
     return vetor
 
@@ -213,8 +224,8 @@ def mostrar_resultado(numerico, simbolico_latex: str) -> None:
         st.markdown("##### ✅ Resultado")
         col_num, col_sym = st.columns(2)
         with col_num:
-            st.caption("Numérico")
+            legenda_centrada("Numérico")
             st.latex(_latex_numerico(numerico))
         with col_sym:
-            st.caption("Simbólico")
+            legenda_centrada("Simbólico")
             st.latex(simbolico_latex)

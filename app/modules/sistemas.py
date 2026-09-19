@@ -126,7 +126,8 @@ def render() -> None:
             st.markdown(f"**Classificação:** {rotulo_classificacao}")
             solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
             if solucao_latex is not None:
-                st.markdown("**Solução:**")
+                st.markdown("<p style='text-align:center'><strong>Solução:</strong></p>",
+                            unsafe_allow_html=True)
                 st.latex(solucao_latex)
 
         if mostrar_passo_a_passo:
