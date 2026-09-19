@@ -68,61 +68,66 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
     n_linhas, n_colunas = dados.shape
 
     with st.container(border=True):
-        col_titulo, col_botoes = st.columns([2, 3])
+        col_titulo, col_botoes = st.columns([3, 2])
         with col_titulo:
             st.markdown(f"**{titulo}** · {n_linhas}×{n_colunas}")
         if permitir_redimensionar and quadrada:
             with col_botoes:
                 c1, c2 = st.columns(2)
-                if c1.button("➕ Dimensão", key=f"{chave}_add_dim", width="stretch"):
+                if c1.button("➕", key=f"{chave}_add_dim", width="content", help="Aumentar dimensão"):
                     nova = np.vstack([dados, np.zeros((1, n_colunas))])
                     nova = np.hstack([nova, np.zeros((n_linhas + 1, 1))])
                     st.session_state[chave_dados] = nova
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c2.button("➖ Dimensão", key=f"{chave}_rem_dim", width="stretch", disabled=n_linhas <= 1):
+                if c2.button("➖", key=f"{chave}_rem_dim", width="content", disabled=n_linhas <= 1,
+                              help="Diminuir dimensão"):
                     st.session_state[chave_dados] = dados[:-1, :-1]
                     st.session_state[chave_versao] += 1
                     st.rerun()
         elif permitir_redimensionar:
             with col_botoes:
                 c1, c2, c3, c4 = st.columns(4)
-                if c1.button("➕ Linha", key=f"{chave}_add_l", width="stretch"):
+                if c1.button("➕L", key=f"{chave}_add_l", width="content", help="Adicionar linha"):
                     st.session_state[chave_dados] = np.vstack([dados, np.zeros((1, n_colunas))])
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c2.button("➕ Coluna", key=f"{chave}_add_c", width="stretch"):
+                if c2.button("➕C", key=f"{chave}_add_c", width="content", help="Adicionar coluna"):
                     st.session_state[chave_dados] = np.hstack([dados, np.zeros((n_linhas, 1))])
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c3.button("➖ Linha", key=f"{chave}_rem_l", width="stretch", disabled=n_linhas <= 1):
+                if c3.button("➖L", key=f"{chave}_rem_l", width="content", disabled=n_linhas <= 1,
+                              help="Remover linha"):
                     st.session_state[chave_dados] = dados[:-1, :]
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c4.button("➖ Coluna", key=f"{chave}_rem_c", width="stretch", disabled=n_colunas <= 1):
+                if c4.button("➖C", key=f"{chave}_rem_c", width="content", disabled=n_colunas <= 1,
+                              help="Remover coluna"):
                     st.session_state[chave_dados] = dados[:, :-1]
                     st.session_state[chave_versao] += 1
                     st.rerun()
 
-        df = pd.DataFrame(
-            dados,
-            index=[f"{i + 1}ª linha" for i in range(n_linhas)],
-            columns=[f"{i + 1}ª coluna" for i in range(n_colunas)],
-        )
-        chave_editor = f"{chave}_editor_{st.session_state[chave_versao]}"
-        editado = st.data_editor(
-            df,
-            key=chave_editor,
-            num_rows="fixed",
-            width="content",
-            row_height=28,
-            column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
-        )
-        matriz = np.array(editado, dtype=float)
-        st.session_state[chave_dados] = matriz
-
-        st.caption("Forma simbólica")
-        st.latex(sp.latex(sp.Matrix(np.round(matriz, 4).tolist())))
+        col_tabela, col_simbolica = st.columns(2)
+        with col_tabela:
+            df = pd.DataFrame(
+                dados,
+                index=[f"{i + 1}ª linha" for i in range(n_linhas)],
+                columns=[f"{i + 1}ª coluna" for i in range(n_colunas)],
+            )
+            chave_editor = f"{chave}_editor_{st.session_state[chave_versao]}"
+            editado = st.data_editor(
+                df,
+                key=chave_editor,
+                num_rows="fixed",
+                width="content",
+                row_height=28,
+                column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
+            )
+            matriz = np.array(editado, dtype=float)
+            st.session_state[chave_dados] = matriz
+        with col_simbolica:
+            st.caption("Forma simbólica")
+            st.latex(sp.latex(sp.Matrix(np.round(matriz, 4).tolist())))
     return matriz
 
 
@@ -134,19 +139,22 @@ def vetor_input(chave: str, dimensao: int = 2, titulo: str = "Vetor",
         valor_defeito = np.ones(dimensao)
     with st.container(border=True):
         st.markdown(f"**{titulo}** · {dimensao}D")
-        df = pd.DataFrame([valor_defeito], columns=[f"{i + 1}ª coluna" for i in range(dimensao)])
-        editado = st.data_editor(
-            df,
-            key=f"{chave}_{dimensao}d",
-            num_rows="fixed",
-            hide_index=True,
-            width="content",
-            row_height=28,
-            column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
-        )
-        vetor = np.array(editado, dtype=float).reshape(-1)
-        st.caption("Forma simbólica")
-        st.latex(sp.latex(sp.Matrix(np.round(vetor, 4).tolist())))
+        col_tabela, col_simbolica = st.columns(2)
+        with col_tabela:
+            df = pd.DataFrame([valor_defeito], columns=[f"{i + 1}ª coluna" for i in range(dimensao)])
+            editado = st.data_editor(
+                df,
+                key=f"{chave}_{dimensao}d",
+                num_rows="fixed",
+                hide_index=True,
+                width="content",
+                row_height=28,
+                column_config={c: st.column_config.NumberColumn(format="%.2f", width="small") for c in df.columns},
+            )
+            vetor = np.array(editado, dtype=float).reshape(-1)
+        with col_simbolica:
+            st.caption("Forma simbólica")
+            st.latex(sp.latex(sp.Matrix(np.round(vetor, 4).tolist())))
     return vetor
 
 
