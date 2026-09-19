@@ -81,8 +81,18 @@ def render() -> None:
         st.text_input("Código de turma", key="jogos_codigo_turma")
         st.text_input("O teu nome", key="jogos_nome_jogador")
 
-    modo = st.radio("Escolhe o modo", MODOS, horizontal=True, key="jogos_modo_escolhido")
-    st.divider()
+    # Enquanto uma pergunta cronometrada está ativa, esconde o seletor de modo
+    # (o jogador não deve trocar de modo a meio de uma pergunta contra o
+    # relógio) — reaparece assim que a sessão termina, ou sempre no Modo Livre.
+    estado_cron = st.session_state.get("jogos_cron", {})
+    modo_anterior = st.session_state.get("jogos_modo_escolhido", MODOS[0])
+    a_jogar_cronometrado = estado_cron.get("ativo", False) and modo_anterior == MODOS[0]
+
+    if a_jogar_cronometrado:
+        modo = modo_anterior
+    else:
+        modo = st.radio("Escolhe o modo", MODOS, horizontal=True, key="jogos_modo_escolhido")
+        st.divider()
 
     with st.container(key="pagina_jogos"):
         if modo == MODOS[0]:
