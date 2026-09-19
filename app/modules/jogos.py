@@ -95,38 +95,57 @@ def render() -> None:
 # Modo Livre (quiz + desafio visual por tópico, sem cronómetro)
 # --------------------------------------------------------------------------
 
+def _mostrar_resultado(resultado: tuple[bool, str]) -> None:
+    correto, mensagem = resultado
+    if correto:
+        st.success(mensagem)
+    else:
+        st.error(mensagem)
+
+
 def _render_modo_livre() -> None:
-    pontuacoes = _pontuacao_sessao()
-    with st.container(border=True):
-        st.caption("Pontuação da sessão")
-        st.markdown(" · ".join(f"**{t}**: {p}" for t, p in pontuacoes.items()))
+    col_esquerda, col_direita = st.columns([3, 2])
 
-    col_topico, col_botao = st.columns([3, 1])
-    with col_topico:
-        topico = st.selectbox("Escolhe o tópico", TOPICOS)
-    with col_botao:
-        st.write("")
-        if st.button("🔄 Novo desafio", width="stretch"):
-            st.session_state.pop(f"jogos_quiz_{topico}", None)
-            st.session_state.pop(f"jogos_visual_{topico}", None)
+    with col_esquerda, st.container(height=650):
+        col_topico, col_botao = st.columns([3, 1])
+        with col_topico:
+            topico = st.selectbox("Escolhe o tópico", TOPICOS)
+        with col_botao:
+            st.write("")
+            if st.button("🔄 Novo desafio", width="stretch"):
+                st.session_state.pop(f"jogos_quiz_{topico}", None)
+                st.session_state.pop(f"jogos_visual_{topico}", None)
 
-    st.divider()
-    _render_quiz(topico)
-    st.divider()
-    _render_visual(topico)
-
-    codigo_turma = st.session_state.get("jogos_codigo_turma", "").strip()
-    if codigo_turma:
         st.divider()
-        st.markdown(f"##### 🏆 Ranking da turma '{codigo_turma}' — {topico}")
-        ranking = pontuacao.obter_ranking(codigo_turma, topico=topico)
-        if ranking:
-            st.table(ranking)
-        else:
-            st.caption("Ainda sem pontuações registadas para este tópico.")
+        resultado_quiz = _render_quiz(topico)
+        st.divider()
+        resultado_visual = _render_visual(topico)
+
+    with col_direita, st.container(height=650):
+        st.markdown("##### 📊 Pontuação e resultados")
+        pontuacoes = _pontuacao_sessao()
+        with st.container(border=True):
+            st.caption("Pontuação da sessão")
+            st.markdown(" · ".join(f"**{t}**: {p}" for t, p in pontuacoes.items()))
+
+        if resultado_quiz is not None:
+            _mostrar_resultado(resultado_quiz)
+        if resultado_visual is not None:
+            _mostrar_resultado(resultado_visual)
+
+        codigo_turma = st.session_state.get("jogos_codigo_turma", "").strip()
+        if codigo_turma:
+            st.markdown(f"##### 🏆 Ranking da turma '{codigo_turma}' — {topico}")
+            ranking = pontuacao.obter_ranking(codigo_turma, topico=topico)
+            if ranking:
+                st.table(ranking)
+            else:
+                st.caption("Ainda sem pontuações registadas para este tópico.")
 
 
-def _render_quiz(topico: str) -> None:
+def _render_quiz(topico: str) -> tuple[bool, str] | None:
+    """Desenha a pergunta + escolha (coluna principal) e devolve o resultado
+    (correto, mensagem) para a coluna de pontuação, ou None se ainda por responder."""
     st.markdown("##### ⚡ Quiz rápido")
     chave = f"jogos_quiz_{topico}"
     if chave not in st.session_state:
@@ -145,14 +164,16 @@ def _render_quiz(topico: str) -> None:
         if estado["correto"]:
             _registar_pontos(topico, estado["pontos"])
 
-    if estado["respondido"]:
-        if estado["correto"]:
-            st.success(f"✅ Correto! +{estado['pontos']} pontos. {desafio.explicacao}")
-        else:
-            st.error(f"❌ Não é essa. {desafio.explicacao}")
+    if not estado["respondido"]:
+        return None
+    if estado["correto"]:
+        return True, f"⚡ Quiz — ✅ Correto! +{estado['pontos']} pontos. {desafio.explicacao}"
+    return False, f"⚡ Quiz — ❌ Não é essa. {desafio.explicacao}"
 
 
-def _render_visual(topico: str) -> None:
+def _render_visual(topico: str) -> tuple[bool, str] | None:
+    """Desenha o desafio visual (coluna principal) e devolve o resultado
+    (correto, mensagem) para a coluna de pontuação, ou None se ainda por responder."""
     st.markdown("##### 🎯 Desafio visual")
     chave = f"jogos_visual_{topico}"
     if chave not in st.session_state:
@@ -177,11 +198,11 @@ def _render_visual(topico: str) -> None:
         if estado["correto"]:
             _registar_pontos(topico, estado["pontos"])
 
-    if estado["respondido"]:
-        if estado["correto"]:
-            st.success(f"✅ Correto! +{estado['pontos']} pontos. {desafio.explicacao}")
-        else:
-            st.error(f"❌ Não foi bem esse ponto. {desafio.explicacao}")
+    if not estado["respondido"]:
+        return None
+    if estado["correto"]:
+        return True, f"🎯 Visual — ✅ Correto! +{estado['pontos']} pontos. {desafio.explicacao}"
+    return False, f"🎯 Visual — ❌ Não foi bem esse ponto. {desafio.explicacao}"
 
 
 # --------------------------------------------------------------------------
@@ -317,51 +338,58 @@ def _render_cronometrado_jogo() -> None:
     estado = _estado_cronometrado()
     if estado["pergunta_atual"] is None:
         _gerar_pergunta_cronometrado(estado)
-
-    col_nivel, col_perg, col_pontos, col_acerto = st.columns(4)
-    col_nivel.metric("Nível", estado["nivel"])
-    col_perg.metric("Pergunta", estado["n_perguntas"] + 1)
-    col_pontos.metric("Pontos", estado["pontos"])
-    taxa = (estado["n_corretas"] / estado["n_perguntas"] * 100) if estado["n_perguntas"] else 0.0
-    col_acerto.metric("Acerto", f"{taxa:.0f}%")
-
-    _cronometro_pergunta()
-
     desafio = estado["pergunta_atual"]
-    with st.container(border=True):
-        st.caption(f"Tópico: {estado['topico_pergunta']} · Jogador: {estado['nome']}")
-        st.write(desafio.pergunta)
-        escolha = st.radio("Escolhe a resposta:", desafio.opcoes, key="jogos_cron_radio",
-                            disabled=estado["respondida"])
 
-    if not estado["respondida"]:
-        col_responder, col_fim = st.columns([3, 1])
-        with col_responder:
-            if st.button("Responder", key="jogos_cron_responder", width="stretch", type="primary"):
-                _responder_cronometrado(estado, escolha)
-                st.rerun()
-        with col_fim:
-            if st.button("🏁 Terminar", key="jogos_cron_terminar", width="stretch"):
-                estado["ativo"] = False
-                st.rerun()
-        return
+    col_esquerda, col_direita = st.columns([3, 2])
 
-    if estado["expirado"]:
-        st.error(f"⏰ Tempo esgotado! {desafio.explicacao}")
-    elif estado["correta"]:
-        st.success(f"✅ Correto! +{estado['pontos_pergunta']} pontos. {desafio.explicacao}")
-    else:
-        st.error(f"❌ Não é essa. {desafio.explicacao}")
+    with col_esquerda, st.container(height=650):
+        _cronometro_pergunta()
 
-    col_prox, col_fim = st.columns(2)
-    with col_prox:
-        if st.button("➡️ Próxima pergunta", key="jogos_cron_proxima", width="stretch", type="primary"):
-            _gerar_pergunta_cronometrado(estado)
-            st.rerun()
-    with col_fim:
-        if st.button("🏁 Terminar e ver resumo", key="jogos_cron_terminar", width="stretch"):
-            estado["ativo"] = False
-            st.rerun()
+        with st.container(border=True):
+            st.caption(f"Tópico: {estado['topico_pergunta']} · Jogador: {estado['nome']}")
+            st.write(desafio.pergunta)
+            escolha = st.radio("Escolhe a resposta:", desafio.opcoes, key="jogos_cron_radio",
+                                disabled=estado["respondida"])
+
+        if not estado["respondida"]:
+            col_responder, col_fim = st.columns([3, 1])
+            with col_responder:
+                if st.button("Responder", key="jogos_cron_responder", width="stretch", type="primary"):
+                    _responder_cronometrado(estado, escolha)
+                    st.rerun()
+            with col_fim:
+                if st.button("🏁 Terminar", key="jogos_cron_terminar", width="stretch"):
+                    estado["ativo"] = False
+                    st.rerun()
+        else:
+            col_prox, col_fim = st.columns(2)
+            with col_prox:
+                if st.button("➡️ Próxima pergunta", key="jogos_cron_proxima", width="stretch", type="primary"):
+                    _gerar_pergunta_cronometrado(estado)
+                    st.rerun()
+            with col_fim:
+                if st.button("🏁 Terminar e ver resumo", key="jogos_cron_terminar", width="stretch"):
+                    estado["ativo"] = False
+                    st.rerun()
+
+    with col_direita, st.container(height=650):
+        st.markdown("##### 📊 Pontuação")
+        col_nivel, col_perg = st.columns(2)
+        col_nivel.metric("Nível", estado["nivel"])
+        col_perg.metric("Pergunta", estado["n_perguntas"] + 1)
+        col_pontos, col_acerto = st.columns(2)
+        col_pontos.metric("Pontos", estado["pontos"])
+        taxa = (estado["n_corretas"] / estado["n_perguntas"] * 100) if estado["n_perguntas"] else 0.0
+        col_acerto.metric("Acerto", f"{taxa:.0f}%")
+
+        if estado["respondida"]:
+            st.markdown("##### 📝 Resultado")
+            if estado["expirado"]:
+                st.error(f"⏰ Tempo esgotado! {desafio.explicacao}")
+            elif estado["correta"]:
+                st.success(f"✅ Correto! +{estado['pontos_pergunta']} pontos. {desafio.explicacao}")
+            else:
+                st.error(f"❌ Não é essa. {desafio.explicacao}")
 
 
 def _render_cronometrado() -> None:
