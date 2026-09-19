@@ -12,7 +12,7 @@ from utils.componentes import (
     modo_passo_a_passo_ativo,
     mostrar_passos,
 )
-from utils.visualizacao import figura_transformacao_parametrizada
+from utils.visualizacao import figura_transformacao_3d, figura_transformacao_parametrizada
 
 VALORES_DEFEITO = {"A": np.array([[2.0, 0.0], [0.0, 3.0]])}
 
@@ -99,6 +99,16 @@ def render() -> None:
                 direcoes_proprias=direcoes or None, modo_leve=modo_leve_da_sessao(),
             )
             st.plotly_chart(fig, width="stretch")
+        elif a.shape == (3, 3):
+            st.markdown("##### 🔎 Ver a transformação em 3D")
+            valores_np, vetores_np = np.linalg.eig(a)
+            direcoes = []
+            for i in range(len(valores_np)):
+                if abs(valores_np[i].imag) < 1e-9:
+                    direcoes.append(np.real(vetores_np[:, i]))
+            st.caption("Arrasta para rodar a vista — o cubo unitário e os vetores M·e1/e2/e3 "
+                       "mostram a transformação; as retas tracejadas são as direções próprias reais.")
+            fig = figura_transformacao_3d(a, direcoes_proprias=direcoes or None)
+            st.plotly_chart(fig, width="stretch")
         else:
-            st.info("A visualização gráfica 3×3 ficará disponível numa iteração seguinte "
-                     "— os valores/vetores próprios acima já estão corretos para 3D.")
+            st.info("A visualização gráfica só está disponível para matrizes 2×2 e 3×3.")

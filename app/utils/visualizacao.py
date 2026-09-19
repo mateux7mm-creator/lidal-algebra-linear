@@ -412,6 +412,87 @@ def figura_retas_2d_parametrizada(
     return fig
 
 
+def _pontos_plano(a: float, b: float, c: float, d: float,
+                   intervalo: tuple[float, float], n: int = 15) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Malha (X, Y, Z) do plano ax + by + cz = d, resolvendo para a variável
+    com o maior coeficiente em valor absoluto (mais estável numericamente —
+    evita dividir por um coeficiente perto de zero)."""
+    coefs = np.array([a, b, c], dtype=float)
+    idx = int(np.argmax(np.abs(coefs)))
+    livres = [i for i in range(3) if i != idx]
+    g1, g2 = np.meshgrid(np.linspace(*intervalo, n), np.linspace(*intervalo, n))
+    grade = [None, None, None]
+    grade[livres[0]] = g1
+    grade[livres[1]] = g2
+    grade[idx] = (d - coefs[livres[0]] * g1 - coefs[livres[1]] * g2) / coefs[idx]
+    return grade[0], grade[1], grade[2]
+
+
+def _interseccao_tripla(equacoes: list[tuple[float, float, float, float]]) -> Optional[np.ndarray]:
+    """Ponto de interseção das 3 primeiras equações, se formarem um sistema
+    3×3 possível e determinado — None caso contrário (menos/mais equações,
+    ou sistema indeterminado/impossível)."""
+    if len(equacoes) != 3:
+        return None
+    matriz = np.array([[a, b, c] for a, b, c, _ in equacoes])
+    vetor = np.array([d for _, _, _, d in equacoes])
+    if abs(np.linalg.det(matriz)) < 1e-9:
+        return None
+    return np.linalg.solve(matriz, vetor)
+
+
+def intervalo_planos(equacoes: list[tuple[float, float, float, float]], minimo: float = 6.0,
+                      margem: float = 1.4) -> tuple[float, float]:
+    """Domínio automático (cubo simétrico em x/y/z): interceções de cada
+    plano com os eixos, mais o ponto de interseção tripla quando existir."""
+    pontos = []
+    for a, b, c, d in equacoes:
+        coefs = [a, b, c]
+        for i in range(3):
+            if abs(coefs[i]) > 1e-9:
+                ponto = [0.0, 0.0, 0.0]
+                ponto[i] = d / coefs[i]
+                pontos.append(ponto)
+    interseccao = _interseccao_tripla(equacoes)
+    if interseccao is not None:
+        pontos.append(list(interseccao))
+    if not pontos:
+        return (-minimo, minimo)
+    maior = max(minimo, float(np.abs(np.array(pontos)).max()) * margem)
+    return (-maior, maior)
+
+
+def figura_planos_3d(equacoes: list[tuple[float, float, float, float]],
+                      intervalo: Optional[tuple[float, float]] = None) -> go.Figure:
+    """equacoes: lista de (a, b, c, d) representando ax + by + cz = d —
+    usado pela interpretação gráfica de Sistemas Lineares com 3 incógnitas.
+    Se `intervalo` não for indicado, é calculado automaticamente."""
+    if intervalo is None:
+        intervalo = intervalo_planos(equacoes)
+
+    fig = go.Figure()
+    for i, (a, b, c, d) in enumerate(equacoes):
+        x, y, z = _pontos_plano(a, b, c, d, intervalo)
+        cor = CORES_VETORES[i % len(CORES_VETORES)]
+        fig.add_trace(go.Surface(x=x, y=y, z=z, showscale=False, opacity=0.55,
+                                  colorscale=[[0, cor], [1, cor]], name=f"Eq. {i + 1}"))
+
+    interseccao = _interseccao_tripla(equacoes)
+    if interseccao is not None:
+        fig.add_trace(go.Scatter3d(
+            x=[interseccao[0]], y=[interseccao[1]], z=[interseccao[2]], mode="markers",
+            marker=dict(size=5, color="black"), name="Interseção",
+        ))
+
+    eixo3d = dict(gridcolor="#e3e3e3", zerolinecolor="#444444", backgroundcolor="white", range=list(intervalo))
+    fig.update_layout(
+        paper_bgcolor="white", font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
+        scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d),
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
+    )
+    return fig
+
+
 # --------------------------------------------------------------------------
 # Transformação linear (Matrizes / Determinantes / Valores Próprios)
 # --------------------------------------------------------------------------
@@ -517,6 +598,73 @@ def figura_transformacao_parametrizada(
     )
     fig.update_layout(annotations=_anotacoes_eixos(intervalo),
                        **_layout_com_slider(valores_parametro, rotulo_parametro), **_eixos_geogebra(intervalo))
+    return fig
+
+
+_ARESTAS_CUBO = [
+    (0, 1), (0, 2), (0, 4), (1, 3), (1, 5), (2, 3),
+    (2, 6), (3, 7), (4, 5), (4, 6), (5, 7), (6, 7),
+]
+_VERTICES_CUBO = np.array([[x, y, z] for x in (0, 1) for y in (0, 1) for z in (0, 1)], dtype=float)
+
+
+def intervalo_transformacao_3d(matrizes: list[np.ndarray], minimo: float = 2.0,
+                                margem: float = 1.3) -> tuple[float, float]:
+    """Maior coordenada (em valor absoluto) do cubo unitário transformado
+    por qualquer uma das matrizes dadas, com margem — para o domínio 3D
+    abranger sempre toda a transformação (mesma ideia de `intervalo_transformacao`, em 3D)."""
+    maior = minimo
+    for m in matrizes:
+        vertices_t = _VERTICES_CUBO @ m.T
+        maior = max(maior, float(np.abs(vertices_t).max()))
+    return (-maior * margem, maior * margem)
+
+
+def figura_transformacao_3d(
+    m: np.ndarray, direcoes_proprias: Optional[list[np.ndarray]] = None,
+    intervalo: Optional[tuple[float, float]] = None,
+) -> go.Figure:
+    """Versão 3D de `figura_transformacao`: o cubo unitário (arestas) e os 3
+    vetores da base transformados por M (matriz 3×3) — usado por Valores
+    Próprios quando a matriz escolhida é 3×3. `direcoes_proprias`, se dadas,
+    desenham-se como retas tracejadas a passar pela origem (a mesma direção
+    própria estende-se nos dois sentidos)."""
+    if intervalo is None:
+        intervalo = intervalo_transformacao_3d([m])
+
+    fig = go.Figure()
+    vertices_t = _VERTICES_CUBO @ m.T
+    for i, j in _ARESTAS_CUBO:
+        p1, p2 = vertices_t[i], vertices_t[j]
+        fig.add_trace(go.Scatter3d(x=[p1[0], p2[0]], y=[p1[1], p2[1]], z=[p1[2], p2[2]], mode="lines",
+                                    line=dict(color="lightgray", width=3), showlegend=False, hoverinfo="skip"))
+
+    nomes_base = ["M·e1", "M·e2", "M·e3"]
+    for i in range(3):
+        v = m[:, i]
+        cor = CORES_VETORES[i % len(CORES_VETORES)]
+        fig.add_trace(go.Scatter3d(x=[0, v[0]], y=[0, v[1]], z=[0, v[2]], mode="lines",
+                                    line=dict(color=cor, width=6), name=nomes_base[i]))
+        fig.add_trace(go.Cone(x=[v[0]], y=[v[1]], z=[v[2]], u=[v[0] * 0.001], v=[v[1] * 0.001], w=[v[2] * 0.001],
+                               showscale=False, colorscale=[[0, cor], [1, cor]],
+                               sizemode="absolute", sizeref=0.3, showlegend=False))
+
+    if direcoes_proprias:
+        escala = intervalo[1] * 0.9
+        for i, d in enumerate(direcoes_proprias):
+            dn = d / (np.linalg.norm(d) + 1e-12)
+            fig.add_trace(go.Scatter3d(
+                x=[-escala * dn[0], escala * dn[0]], y=[-escala * dn[1], escala * dn[1]],
+                z=[-escala * dn[2], escala * dn[2]], mode="lines",
+                line=dict(color="black", width=2, dash="dash"), name=f"Direção própria {i + 1}",
+            ))
+
+    eixo3d = dict(gridcolor="#e3e3e3", zerolinecolor="#444444", backgroundcolor="white", range=list(intervalo))
+    fig.update_layout(
+        paper_bgcolor="white", font=dict(family="Arial, Helvetica, sans-serif", size=13, color="#1f2430"),
+        scene=dict(aspectmode="cube", xaxis=eixo3d, yaxis=eixo3d, zaxis=eixo3d),
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
+    )
     return fig
 
 

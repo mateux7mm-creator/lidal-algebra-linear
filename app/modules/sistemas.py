@@ -18,7 +18,7 @@ from utils.componentes import (
     modo_passo_a_passo_ativo,
     mostrar_passos,
 )
-from utils.visualizacao import figura_retas_2d, figura_retas_2d_parametrizada
+from utils.visualizacao import figura_planos_3d, figura_retas_2d, figura_retas_2d_parametrizada
 
 EXEMPLO_PADRAO = ["x + y = 3", "x - y = 1"]
 
@@ -34,21 +34,28 @@ def _inicializar_estado() -> None:
 
 
 def _menu_equacoes() -> None:
+    """Os st.rerun() são necessários porque este menu (dentro de um popover
+    de barra_menus) só é desenhado DEPOIS do ciclo que mostra as caixas de
+    equação — sem forçar já aqui outra execução, o clique só ficaria visível
+    na interação seguinte, não de imediato."""
     st.caption("Gerir as equações do sistema")
     if st.button("➕ Adicionar equação", key="sistemas_btn_add", width="stretch"):
         i = st.session_state["sistemas_n_eq"]
         st.session_state.setdefault(f"sistemas_eq_{i}", "")
         st.session_state.setdefault(f"sistemas_eq_mostrar_{i}", True)
         st.session_state["sistemas_n_eq"] += 1
+        st.rerun()
     if st.button("➖ Remover última equação", key="sistemas_btn_rem", width="stretch"):
         if st.session_state["sistemas_n_eq"] > 1:
             st.session_state["sistemas_n_eq"] -= 1
+            st.rerun()
     if st.button("🔄 Repor exemplo (2 equações)", key="sistemas_btn_reset", width="stretch"):
         st.session_state["sistemas_variaveis"] = "x, y"
         st.session_state["sistemas_n_eq"] = len(EXEMPLO_PADRAO)
         for i, eq in enumerate(EXEMPLO_PADRAO):
             st.session_state[f"sistemas_eq_{i}"] = eq
             st.session_state[f"sistemas_eq_mostrar_{i}"] = True
+        st.rerun()
 
 
 def _menu_ver() -> None:
@@ -180,5 +187,14 @@ def render() -> None:
                 st.caption("A exploração animada da reta só está disponível para sistemas de exatamente "
                            "2 equações e 2 incógnitas.")
         elif n_variaveis == 3:
-            st.info("A visualização 3D da interseção de planos ficará disponível numa iteração seguinte "
-                     "— a resolução simbólica acima já funciona para 3 variáveis.")
+            st.markdown("##### 📈 Interpretação gráfica (3D)")
+            equacoes_visiveis_3d = [(a[i, 0], a[i, 1], a[i, 2], b[i]) for i in range(n_equacoes)
+                                     if st.session_state.get(f"sistemas_eq_mostrar_{i}", True)]
+            if equacoes_visiveis_3d:
+                st.caption("Arrasta para rodar a vista — cada plano é uma equação; "
+                           "o ponto preto é a interseção, quando existe uma única.")
+                st.plotly_chart(figura_planos_3d(equacoes_visiveis_3d), width="stretch",
+                                 key="sistemas_grafico_3d")
+            else:
+                st.caption("Nenhuma equação selecionada para mostrar no gráfico — "
+                           "marca a caixa \"Mostrar no gráfico\" junto de pelo menos uma equação.")
