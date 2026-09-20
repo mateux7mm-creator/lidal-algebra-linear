@@ -17,7 +17,7 @@ html, body, [class*="css"] {{
     color: {_TEXTO};
 }}
 
-h1, h2, h3 {{
+h1, h2, h3, .hero-title, .gradient-text {{
     font-family: 'Outfit', sans-serif !important;
 }}
 
@@ -42,24 +42,156 @@ hr {{
 }}
 
 /* --------------------------------------------------------------------
-   Boas-vindas na Início (etiqueta pequena acima do título + ilustração)
+   Animações Keyframes
    -------------------------------------------------------------------- */
-.boas-vindas-etiqueta {{
-    display: inline-block;
-    color: {_PRIMARIA};
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
-    margin-bottom: -0.4rem;
+@keyframes fadeInSlideUp {{
+    from {{
+        opacity: 0;
+        transform: translateY(18px);
+    }}
+    to {{
+        opacity: 1;
+        transform: translateY(0);
+    }}
 }}
-.hero-ilustracao {{
-    max-width: 340px;
-    margin: 0 auto;
+
+@keyframes floatAnimation {{
+    0% {{ transform: translateY(0px) rotate(0deg); }}
+    50% {{ transform: translateY(-8px) rotate(0.5deg); }}
+    100% {{ transform: translateY(0px) rotate(0deg); }}
 }}
-.hero-ilustracao svg {{
+
+@keyframes glowPulse {{
+    0% {{ box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.35); }}
+    70% {{ box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }}
+    100% {{ box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }}
+}}
+
+@keyframes gradientShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+/* --------------------------------------------------------------------
+   Estilos do Hero & Boas-vindas
+   -------------------------------------------------------------------- */
+.hero-card {{
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(243,244,246,0.95) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 20px;
+    padding: 2.2rem 2rem;
+    box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.15);
+    animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}}
+
+.hero-card::before {{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, #4F46E5 0%, #06B6D4 100%);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}}
+
+.lab-badge {{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    background: linear-gradient(90deg, rgba(79, 70, 229, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    border-radius: 9999px;
+    color: #4F46E5;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+}}
+
+.gradient-text {{
+    background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #06B6D4 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 8s ease infinite;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}}
+
+.hero-sub {{
+    font-size: 1.1rem;
+    color: #475569;
+    line-height: 1.6;
+    margin-top: 0.6rem;
+    font-weight: 400;
+}}
+
+.hero-img-wrap {{
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    animation: floatAnimation 6s ease-in-out infinite;
+}}
+
+.hero-img-wrap:hover {{
+    transform: scale(1.02) translateY(-4px);
+    box-shadow: 0 22px 45px rgba(79, 70, 229, 0.25);
+}}
+
+.hero-img-wrap img {{
     width: 100%;
     height: auto;
     display: block;
+    object-fit: cover;
+}}
+
+/* Stats Pills - Largura Total Horizontal */
+.recursos-container {{
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+}}
+
+.stat-pill {{
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    height: 100%;
+}}
+.stat-pill:hover {{
+    transform: translateY(-3px);
+    border-color: #818CF8;
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.12);
+}}
+.stat-icon {{
+    font-size: 1.8rem;
+    line-height: 1;
+}}
+.stat-num {{
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #1E1B4B;
+}}
+.stat-label {{
+    font-size: 0.8rem;
+    color: #64748B;
 }}
 
 /* --------------------------------------------------------------------
@@ -92,6 +224,13 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {{
     border-color: rgba(99, 102, 241, 0.4) !important;
 }}
 
+.module-header-box {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+}}
+
 .module-badge {{
     font-size: 0.7rem;
     font-weight: 700;
@@ -101,6 +240,22 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {{
     letter-spacing: 0.03em;
 }}
 .badge-indigo {{ background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }}
+.badge-cyan {{ background: #ECFEFF; color: #0891B2; border: 1px solid #A5F3FC; }}
+.badge-emerald {{ background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }}
+.badge-amber {{ background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }}
+
+.math-object-img {{
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    transition: transform 0.3s ease;
+}}
+.math-object-img:hover {{
+    transform: scale(1.03);
+}}
 
 /* --------------------------------------------------------------------
    Botões e Controlos
@@ -187,22 +342,21 @@ div[data-testid="stMetricValue"] {{
    Responsividade para Ecrãs Pequenos (Telemóveis / Tablets)
    -------------------------------------------------------------------- */
 @media (max-width: 768px) {{
-    h1 {{
-        font-size: 1.6rem !important;
-    }}
     div[data-testid="stMainBlockContainer"] {{
         padding-left: 0.8rem !important;
         padding-right: 0.8rem !important;
     }}
-    div[style*="650px"] {{
-        height: 420px !important;
-        max-height: 65vh !important;
+    .hero-card {{
+        padding: 1.4rem 1.1rem !important;
     }}
-    .hero-ilustracao {{
-        max-width: 220px;
+    .gradient-text {{
+        font-size: 1.8rem !important;
     }}
-    div[class*="st-key-pagina_jogos"] div[data-testid="stVerticalBlockBorderWrapper"] {{
-        padding: 0.4rem 0.6rem !important;
+    .hero-sub {{
+        font-size: 0.95rem !important;
+    }}
+    .math-object-img {{
+        height: 110px !important;
     }}
 }}
 </style>

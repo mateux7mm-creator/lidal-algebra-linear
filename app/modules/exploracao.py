@@ -71,6 +71,10 @@ def _repor_exemplos() -> None:
         st.session_state[f"exploracao_eq_{i}"] = eq
         st.session_state[f"exploracao_eq_mostrar_{i}"] = EXEMPLOS_MOSTRAR_DEFEITO[i]
         st.session_state[f"exploracao_eq_cor_{i}"] = CORES_VETORES[i % len(CORES_VETORES)]
+    # Limpar estados de animação para os sliders ficarem ativos por defeito
+    for chave in list(st.session_state.keys()):
+        if chave.startswith("exploracao_animar_"):
+            st.session_state[chave] = False
 
 
 def _selecionar_animacao(nome_selecionado: str, todos_os_nomes: list[str]) -> None:
@@ -118,14 +122,10 @@ def render() -> None:
             for nome in novos:
                 parametros_mostrados.add(nome)
                 st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
-                # o primeiro parâmetro que aparece fica já com o controlo
-                # fluido (nativo do Plotly) ligado por omissão — só passa a
-                # False se já houver outro ativo (só um pode estar de cada vez).
-                ja_ha_algum_ativo = any(st.session_state.get(f"exploracao_animar_{outro}", False)
-                                         for outro in nomes_parametros)
-                st.session_state.setdefault(f"exploracao_animar_{nome}", not ja_ha_algum_ativo)
+                # Por defeito, a animação fica DESLIGADA (False) para que o slider esteja ativo e movimentável
+                st.session_state.setdefault(f"exploracao_animar_{nome}", False)
                 a_animar = st.session_state.get(f"exploracao_animar_{nome}", False)
-
+                
                 col_slider, col_animar = st.columns([3.2, 1.8])
                 with col_slider:
                     st.slider(
