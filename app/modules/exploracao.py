@@ -118,7 +118,12 @@ def render() -> None:
             for nome in novos:
                 parametros_mostrados.add(nome)
                 st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
-                st.session_state.setdefault(f"exploracao_animar_{nome}", False)
+                # o primeiro parâmetro que aparece fica já com o controlo
+                # fluido (nativo do Plotly) ligado por omissão — só passa a
+                # False se já houver outro ativo (só um pode estar de cada vez).
+                ja_ha_algum_ativo = any(st.session_state.get(f"exploracao_animar_{outro}", False)
+                                         for outro in nomes_parametros)
+                st.session_state.setdefault(f"exploracao_animar_{nome}", not ja_ha_algum_ativo)
                 a_animar = st.session_state[f"exploracao_animar_{nome}"]
                 col_slider, col_animar = st.columns([4, 1])
                 with col_slider:
@@ -137,7 +142,7 @@ def render() -> None:
 
         if not nomes_parametros:
             st.caption("💡 Escreve uma letra extra numa equação (ex. \"y = a*x^2\") para "
-                       "ganhares um slider desse parâmetro — e poderes animá-lo.")
+                       "ganhares um slider fluido desse parâmetro, já pronto a arrastar ou animar.")
 
         col_add, col_rem = st.columns(2)
         with col_add:
