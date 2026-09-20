@@ -16,6 +16,7 @@ from __future__ import annotations
 import random
 import time
 
+import sympy as sp
 import streamlit as st
 
 from utils import desafios, pontuacao
@@ -46,7 +47,11 @@ DECREMENTO_POR_NIVEL_S = 3
 PONTOS_BASE = 100
 PONTOS_MINIMOS_ACERTO = 10
 
-MODOS = ["🕒 Jogo Cronometrado", "📝 Modo Livre (por tópico)"]
+MODOS = ["🕒 Jogo Cronometrado", "📝 Modo Livre (por tópico)", "🧩 Desafio com Pistas"]
+
+PONTOS_FASE1_PRIMEIRA_TENTATIVA = 50
+PONTOS_FASE1_COM_PISTA = 20
+PONTOS_FASE2 = 50
 
 
 def _pontuacao_sessao() -> dict:
@@ -97,8 +102,10 @@ def render() -> None:
     with st.container(key="pagina_jogos"):
         if modo == MODOS[0]:
             _render_cronometrado()
-        else:
+        elif modo == MODOS[1]:
             _render_modo_livre()
+        else:
+            _render_desafio_progressivo()
 
 
 # --------------------------------------------------------------------------
@@ -408,3 +415,122 @@ def _render_cronometrado() -> None:
         _render_cronometrado_jogo()
     else:
         _render_cronometrado_config()
+
+
+# --------------------------------------------------------------------------
+# Desafio com Pistas — em vez de dar logo a resposta, pede primeiro o cálculo
+# do determinante (com pista disponível) e só depois se decide se a matriz
+# tem inversa, com feedback explicado. Ver "Estrutura do Trabalho" secção 9.
+# --------------------------------------------------------------------------
+
+def _estado_progressivo() -> dict:
+    return st.session_state.setdefault("jogos_prog", {
+        "desafio": None,
+        "fase": 1,
+        "tentativas_fase1": 0,
+        "mostrar_dica": False,
+        "erro_fase1": False,
+        "resposta_fase2": None,
+        "pontos": 0,
+        "n_desafios": 0,
+        "n_fase2_respondidas": 0,
+        "n_corretos_fase2": 0,
+    })
+
+
+def _novo_desafio_progressivo(estado: dict) -> None:
+    estado["desafio"] = desafios.gerar_desafio_progressivo_inversa(dim=2)
+    estado["fase"] = 1
+    estado["tentativas_fase1"] = 0
+    estado["mostrar_dica"] = False
+    estado["erro_fase1"] = False
+    estado["resposta_fase2"] = None
+    estado["n_desafios"] += 1
+
+
+def _responder_fase2(estado: dict, resposta: bool) -> None:
+    estado["resposta_fase2"] = resposta
+    estado["n_fase2_respondidas"] += 1
+    if resposta == estado["desafio"].tem_inversa:
+        estado["pontos"] += PONTOS_FASE2
+        estado["n_corretos_fase2"] += 1
+        _registar_pontos("Determinantes", PONTOS_FASE2)
+
+
+def _render_desafio_progressivo() -> None:
+    estado = _estado_progressivo()
+    if estado["desafio"] is None:
+        _novo_desafio_progressivo(estado)
+    desafio = estado["desafio"]
+
+    col_esquerda, col_direita = st.columns([3, 2])
+
+    with col_esquerda, st.container(height=650):
+        st.caption(f"Desafio {estado['n_desafios']} · Fase {estado['fase']} de 2")
+        with st.container(border=True):
+            st.write("Considera a matriz A:")
+            st.latex(f"A = {sp.latex(sp.Matrix(desafio.matriz.tolist()))}")
+
+        if estado["fase"] == 1:
+            st.markdown("##### 1️⃣ Qual é o determinante de A?")
+            resposta = st.number_input("det(A) =", value=0.0, step=1.0, key="jogos_prog_det_input")
+            col_responder, col_dica = st.columns(2)
+            with col_responder:
+                if st.button("Responder", key="jogos_prog_responder_fase1", width="stretch", type="primary"):
+                    if abs(resposta - desafio.determinante) < 1e-6:
+                        pontos_fase1 = (
+                            PONTOS_FASE1_PRIMEIRA_TENTATIVA
+                            if estado["tentativas_fase1"] == 0 and not estado["mostrar_dica"]
+                            else PONTOS_FASE1_COM_PISTA
+                        )
+                        estado["pontos"] += pontos_fase1
+                        estado["fase"] = 2
+                        estado["erro_fase1"] = False
+                        st.rerun()
+                    else:
+                        estado["tentativas_fase1"] += 1
+                        estado["erro_fase1"] = True
+            with col_dica:
+                if st.button("💡 Pista", key="jogos_prog_pista", width="stretch"):
+                    estado["mostrar_dica"] = True
+
+            if estado["erro_fase1"]:
+                st.error("Ainda não é esse valor — tenta de novo.")
+            if estado["mostrar_dica"] or estado["tentativas_fase1"] >= 2:
+                st.info(f"💡 {desafio.dica}")
+        else:
+            st.success(f"✅ det(A) = {desafio.determinante:g}. Boa!")
+            st.markdown("##### 2️⃣ A matriz A tem inversa?")
+            col_sim, col_nao = st.columns(2)
+            respondido_fase2 = estado["resposta_fase2"] is not None
+            with col_sim:
+                if st.button("Sim", key="jogos_prog_sim", width="stretch", disabled=respondido_fase2):
+                    _responder_fase2(estado, True)
+                    st.rerun()
+            with col_nao:
+                if st.button("Não", key="jogos_prog_nao", width="stretch", disabled=respondido_fase2):
+                    _responder_fase2(estado, False)
+                    st.rerun()
+
+            if respondido_fase2:
+                if estado["resposta_fase2"] == desafio.tem_inversa:
+                    st.success(f"✅ Certo! {desafio.explicacao}")
+                else:
+                    st.error(f"❌ Não é bem assim. {desafio.explicacao}")
+                if st.button("➡️ Novo desafio", key="jogos_prog_novo", width="stretch", type="primary"):
+                    _novo_desafio_progressivo(estado)
+                    st.rerun()
+
+    with col_direita, st.container(height=650):
+        st.markdown("##### 📊 Pontuação")
+        col_desafios, col_pontos = st.columns(2)
+        col_desafios.metric("Desafios", estado["n_desafios"])
+        col_pontos.metric("Pontos", estado["pontos"])
+        taxa = (estado["n_corretos_fase2"] / estado["n_fase2_respondidas"] * 100) if estado["n_fase2_respondidas"] else 0.0
+        st.metric("Acerto (fase 2)", f"{taxa:.0f}%")
+
+        st.divider()
+        st.caption(
+            "Em vez de perguntar logo se a matriz tem inversa, o desafio pede primeiro o "
+            "determinante (com pista, se precisares) — só depois é que decides."
+        )

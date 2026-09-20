@@ -49,6 +49,21 @@ class DesafioVisual:
     explicacao: str = ""
 
 
+@dataclass
+class DesafioProgressivo:
+    """Um desafio em duas fases (em vez de dar logo a resposta): primeiro
+    calcular o determinante, só depois decidir se a matriz tem inversa — com
+    pista disponível na 1ª fase. Estilo pedido em "Estrutura do Trabalho"
+    (secção 9): "solicitar primeiro o cálculo do determinante e, depois,
+    fornecer feedback progressivo", em vez de um quiz de resposta direta."""
+
+    matriz: np.ndarray
+    determinante: float
+    tem_inversa: bool
+    dica: str
+    explicacao: str
+
+
 def _matriz_aleatoria(dim: int = 2, minimo: int = -4, maximo: int = 4) -> np.ndarray:
     return np.random.randint(minimo, maximo + 1, size=(dim, dim)).astype(float)
 
@@ -295,6 +310,42 @@ def gerar_desafio_visual_valores_proprios() -> tuple[DesafioVisual, go.Figure]:
                     f"com direção própria ≈ ({direcao[0]:.2f}, {direcao[1]:.2f}).",
     )
     return desafio, fig
+
+
+# --------------------------------------------------------------------------
+# Desafios progressivos (pistas por fases, em vez da resposta direta)
+# --------------------------------------------------------------------------
+
+def gerar_desafio_progressivo_inversa(dim: int = 2) -> DesafioProgressivo:
+    """Fase 1: calcular det(A). Fase 2: decidir se A tem inversa. Gera
+    metade das vezes uma matriz singular e metade não-singular, para o
+    "tem inversa?" não ser sempre a mesma resposta."""
+    singular = random.random() < 0.5
+    if singular:
+        while True:
+            a = _matriz_aleatoria(dim, -4, 4)
+            if not np.allclose(a[0], 0):
+                break
+        fator = random.choice([-2, -1, 2, 3])
+        a[1] = fator * a[0]
+        if dim == 3:
+            a[2] = _matriz_aleatoria(1, -4, 4)[0]
+    else:
+        while True:
+            a = _matriz_aleatoria(dim, -4, 4)
+            if abs(np.linalg.det(a)) > 1e-6:
+                break
+
+    det = float(np.linalg.det(a))
+    tem_inversa = abs(det) > 1e-6
+    if dim == 2:
+        dica = "Para uma matriz 2×2 [[a, b], [c, d]], det(A) = a·d − b·c."
+    else:
+        dica = ("Usa a regra de Sarrus: soma o produto das 3 diagonais descendentes e subtrai "
+                "o produto das 3 diagonais ascendentes.")
+    explicacao = (f"det(A) = {det:g}. Como det(A) {'≠' if tem_inversa else '='} 0, "
+                  f"a matriz {'tem' if tem_inversa else 'não tem'} inversa.")
+    return DesafioProgressivo(a, det, tem_inversa, dica, explicacao)
 
 
 def verificar_resposta_visual(desafio: DesafioVisual, ponto_clicado: tuple[float, float]) -> bool:
