@@ -65,11 +65,7 @@ def render() -> None:
                                            valor_defeito=VALORES_DEFEITO.get(nome))
 
         st.divider()
-        col_operacao, col_toggle = st.columns([2, 1])
-        with col_operacao:
-            operacao = st.selectbox("Escolher operação", TODAS_OPERACOES)
-        with col_toggle:
-            mostrar_passo_a_passo = modo_passo_a_passo_ativo("matrizes")
+        operacao = st.selectbox("Escolher operação", TODAS_OPERACOES)
 
         k = None
         if operacao in OPERACOES_2_MATRIZES:
@@ -130,14 +126,19 @@ def render() -> None:
 
     with col_direita, st.container(height=650):
         if resultado_sp is None:
-            st.warning("A matriz é singular (det = 0) — não tem inversa.")
-            if mostrar_passo_a_passo:
-                mostrar_passos(passos)
+            with st.container(border=True):
+                col_titulo, col_toggle = st.columns([3, 2])
+                with col_titulo:
+                    st.warning("A matriz é singular (det = 0) — não tem inversa.")
+                with col_toggle:
+                    mostrar_passo_a_passo = modo_passo_a_passo_ativo("matrizes")
+                if mostrar_passo_a_passo:
+                    st.divider()
+                    mostrar_passos(passos)
             return
 
-        mostrar_resultado(numerico=simbolico.para_numpy(resultado_sp), simbolico_latex=sp.latex(resultado_sp))
-        if mostrar_passo_a_passo:
-            mostrar_passos(passos)
+        mostrar_resultado(numerico=simbolico.para_numpy(resultado_sp), simbolico_latex=sp.latex(resultado_sp),
+                           chave_pagina="matrizes", passos=passos)
 
         if operacao == "Produto escalar" and a.shape == (2, 2):
             st.divider()

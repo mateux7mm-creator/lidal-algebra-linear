@@ -57,11 +57,7 @@ def render() -> None:
                                            valor_defeito=VALORES_DEFEITO.get(nome), quadrada=True)
 
         st.divider()
-        col_sel, col_toggle = st.columns([2, 1])
-        with col_sel:
-            nome_a = st.selectbox("Matriz a analisar", nomes, key="valores_proprios_op_nome")
-        with col_toggle:
-            mostrar_passo_a_passo = modo_passo_a_passo_ativo("valores_proprios")
+        nome_a = st.selectbox("Matriz a analisar", nomes, key="valores_proprios_op_nome")
         a = matrizes[nome_a]
 
         with st.container(border=True):
@@ -74,15 +70,19 @@ def render() -> None:
         (diagonalizacao, passos_diag) = simbolico.diagonalizar(a_sp)
 
         with st.container(border=True):
-            st.markdown("##### ✅ Resultado")
+            col_titulo, col_toggle = st.columns([3, 2])
+            with col_titulo:
+                st.markdown("##### ✅ Resultado")
+            with col_toggle:
+                mostrar_passo_a_passo = modo_passo_a_passo_ativo("valores_proprios")
             st.markdown("**Valores próprios:** " + ", ".join(sp.latex(v) for v in valores))
             if diagonalizacao is not None:
                 p, d = diagonalizacao
                 st.caption("Diagonalização A = P·D·P⁻¹")
                 st.latex(f"P = {sp.latex(p)}, \\quad D = {sp.latex(d)}")
-
-        if mostrar_passo_a_passo:
-            mostrar_passos(passos_eigen + passos_diag)
+            if mostrar_passo_a_passo:
+                st.divider()
+                mostrar_passos(passos_eigen + passos_diag)
 
     with col_direita, st.container(height=650):
         if a.shape == (2, 2):

@@ -49,11 +49,7 @@ def render() -> None:
     col_esquerda, col_direita = st.columns([2, 3])
 
     with col_esquerda, st.container(height=650):
-        col_dim, col_toggle = st.columns([2, 1])
-        with col_dim:
-            dimensao = st.radio("Dimensão", [2, 3], horizontal=True, format_func=lambda d: f"{d}D")
-        with col_toggle:
-            mostrar_passo_a_passo = modo_passo_a_passo_ativo("vetores")
+        dimensao = st.radio("Dimensão", [2, 3], horizontal=True, format_func=lambda d: f"{d}D")
 
         col_add, col_rem = st.columns(2)
         with col_add:
@@ -132,7 +128,11 @@ def render() -> None:
 
         passos: list[Passo] = []
         with st.container(border=True):
-            st.markdown("##### ✅ Resultado")
+            col_titulo, col_toggle = st.columns([3, 2])
+            with col_titulo:
+                st.markdown("##### ✅ Resultado")
+            with col_toggle:
+                mostrar_passo_a_passo = modo_passo_a_passo_ativo("vetores")
             if operacao == "Soma":
                 resultado = v + w
                 st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
@@ -205,8 +205,9 @@ def render() -> None:
                                        f"{'são' if ortogonais else 'não são'} ortogonais."),
                 ]
 
-        if mostrar_passo_a_passo and passos:
-            mostrar_passos(passos)
+            if mostrar_passo_a_passo and passos:
+                st.divider()
+                mostrar_passos(passos)
 
     with col_direita, st.container(height=650):
         st.markdown("##### 📈 Visualização")

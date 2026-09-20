@@ -223,11 +223,18 @@ def _latex_numerico(numerico) -> str:
         else sp.latex(sp.Matrix(arredondado.reshape(1, -1).tolist()))
 
 
-def mostrar_resultado(numerico, simbolico_latex: str) -> None:
-    """Mostra o resultado numérico e simbólico lado a lado, sempre no mesmo layout
-    (ambos como bracket LaTeX, para consistência visual)."""
+def mostrar_resultado(numerico, simbolico_latex: str, chave_pagina: str,
+                       passos: list[Passo] | None = None) -> bool:
+    """Mostra o resultado numérico e simbólico lado a lado (ambos como bracket
+    LaTeX, para consistência visual), com o toggle "modo passo-a-passo" na
+    mesma caixa — e, se ligado, os passos logo a seguir, ainda dentro dela.
+    Devolve o estado do toggle, para quem precise dele fora desta chamada."""
     with st.container(border=True):
-        st.markdown("##### ✅ Resultado")
+        col_titulo, col_toggle = st.columns([3, 2])
+        with col_titulo:
+            st.markdown("##### ✅ Resultado")
+        with col_toggle:
+            mostrar_passo_a_passo = modo_passo_a_passo_ativo(chave_pagina)
         col_num, col_sym = st.columns(2)
         with col_num:
             legenda_centrada("Numérico")
@@ -235,3 +242,7 @@ def mostrar_resultado(numerico, simbolico_latex: str) -> None:
         with col_sym:
             legenda_centrada("Simbólico")
             st.latex(simbolico_latex)
+        if mostrar_passo_a_passo and passos:
+            st.divider()
+            mostrar_passos(passos)
+    return mostrar_passo_a_passo

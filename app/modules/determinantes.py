@@ -56,11 +56,7 @@ def render() -> None:
                                            valor_defeito=VALORES_DEFEITO.get(nome), quadrada=True)
 
         st.divider()
-        col_sel, col_toggle = st.columns([2, 1])
-        with col_sel:
-            nome_a = st.selectbox("Matriz a analisar", nomes, key="determinantes_op_nome")
-        with col_toggle:
-            mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
+        nome_a = st.selectbox("Matriz a analisar", nomes, key="determinantes_op_nome")
         a = matrizes[nome_a]
 
         with st.container(border=True):
@@ -73,7 +69,11 @@ def render() -> None:
         inversa_sp, passos_inv = simbolico.inversa(a_sp)
 
         with st.container(border=True):
-            st.markdown("##### ✅ Resultado")
+            col_titulo, col_toggle = st.columns([3, 2])
+            with col_titulo:
+                st.markdown("##### ✅ Resultado")
+            with col_toggle:
+                mostrar_passo_a_passo = modo_passo_a_passo_ativo("determinantes")
             col_det, col_inv = st.columns(2)
             with col_det:
                 st.metric("Determinante", f"{float(det_sp):.4g}")
@@ -83,9 +83,9 @@ def render() -> None:
                 else:
                     st.caption("Matriz inversa")
                     st.latex(sp.latex(inversa_sp))
-
-        if mostrar_passo_a_passo:
-            mostrar_passos(passos_det + passos_inv)
+            if mostrar_passo_a_passo:
+                st.divider()
+                mostrar_passos(passos_det + passos_inv)
 
     with col_direita, st.container(height=650):
         if a.shape == (2, 2):

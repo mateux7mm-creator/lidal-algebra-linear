@@ -77,12 +77,8 @@ def render() -> None:
     col_esquerda, col_direita = st.columns([2, 3])
 
     with col_esquerda, st.container(height=650):
-        col_vars, col_toggle = st.columns([2, 1])
-        with col_vars:
-            st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
-                           placeholder="ex.: x, y")
-        with col_toggle:
-            mostrar_passo_a_passo = modo_passo_a_passo_ativo("sistemas")
+        st.text_input("Incógnitas (separadas por vírgula)", key="sistemas_variaveis",
+                       placeholder="ex.: x, y")
 
         st.markdown("**Equações**")
         for i in range(st.session_state["sistemas_n_eq"]):
@@ -129,16 +125,20 @@ def render() -> None:
         }[classificacao]
 
         with st.container(border=True):
-            st.markdown("##### Resultado")
+            col_titulo, col_toggle = st.columns([3, 2])
+            with col_titulo:
+                st.markdown("##### Resultado")
+            with col_toggle:
+                mostrar_passo_a_passo = modo_passo_a_passo_ativo("sistemas")
             st.markdown(f"**Classificação:** {rotulo_classificacao}")
             solucao_latex = simbolico.formatar_solucao_sistema(solucoes, simbolos)
             if solucao_latex is not None:
                 st.markdown("<p style='text-align:center'><strong>Solução:</strong></p>",
                             unsafe_allow_html=True)
                 st.latex(solucao_latex)
-
-        if mostrar_passo_a_passo:
-            mostrar_passos(passos + passos_resolucao)
+            if mostrar_passo_a_passo:
+                st.divider()
+                mostrar_passos(passos + passos_resolucao)
 
     with col_direita, st.container(height=650):
         if n_variaveis == 2:
