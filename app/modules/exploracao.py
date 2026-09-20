@@ -14,7 +14,8 @@ from utils.visualizacao import (
     figura_exploracao_grafica_parametrizada,
 )
 
-EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9"]
+EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "2x - y = 1"]
+EXEMPLOS_MOSTRAR_DEFEITO = [True, True, False]
 LIMITE_PARAMETRO = 5.0
 
 
@@ -47,7 +48,7 @@ def _inicializar_estado() -> None:
     st.session_state.setdefault("exploracao_n_eq", len(EXEMPLOS))
     for i, eq in enumerate(EXEMPLOS):
         st.session_state.setdefault(f"exploracao_eq_{i}", eq)
-        st.session_state.setdefault(f"exploracao_eq_mostrar_{i}", True)
+        st.session_state.setdefault(f"exploracao_eq_mostrar_{i}", EXEMPLOS_MOSTRAR_DEFEITO[i])
         st.session_state.setdefault(f"exploracao_eq_cor_{i}", CORES_VETORES[i % len(CORES_VETORES)])
 
 
@@ -68,7 +69,7 @@ def _repor_exemplos() -> None:
     st.session_state["exploracao_n_eq"] = len(EXEMPLOS)
     for i, eq in enumerate(EXEMPLOS):
         st.session_state[f"exploracao_eq_{i}"] = eq
-        st.session_state[f"exploracao_eq_mostrar_{i}"] = True
+        st.session_state[f"exploracao_eq_mostrar_{i}"] = EXEMPLOS_MOSTRAR_DEFEITO[i]
         st.session_state[f"exploracao_eq_cor_{i}"] = CORES_VETORES[i % len(CORES_VETORES)]
 
 
@@ -118,13 +119,20 @@ def render() -> None:
                 parametros_mostrados.add(nome)
                 st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
                 st.session_state.setdefault(f"exploracao_animar_{nome}", False)
+                a_animar = st.session_state[f"exploracao_animar_{nome}"]
                 col_slider, col_animar = st.columns([4, 1])
                 with col_slider:
+                    # desativado enquanto anima: nesse modo quem manda no
+                    # valor é o slider nativo do Plotly por baixo do gráfico
+                    # (a animação percorre sempre o intervalo todo), por isso
+                    # arrastar este aqui não mudaria nada — evita a confusão.
                     st.slider(f"Parâmetro {nome}", min_value=-LIMITE_PARAMETRO, max_value=LIMITE_PARAMETRO,
-                               step=0.1, key=f"exploracao_param_{nome}")
+                               step=0.1, key=f"exploracao_param_{nome}", disabled=a_animar)
                 with col_animar:
                     st.checkbox("🎬", key=f"exploracao_animar_{nome}", help=f"Animar o parâmetro \"{nome}\"",
                                 on_change=_selecionar_animacao, args=(nome, nomes_parametros))
+                if a_animar:
+                    st.caption("🎬 A animar — usa o slider por baixo do gráfico.")
             st.divider()
 
         if not nomes_parametros:
