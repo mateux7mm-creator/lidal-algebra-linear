@@ -259,6 +259,11 @@ def inversa(a: sp.Matrix) -> tuple[Optional[sp.Matrix], list[Passo]]:
         "Dividir a adjugada pelo determinante", "A⁻¹ = (1/det(A))·adj(A).",
         latex=f"A^{{-1}} = \\frac{{1}}{{{sp.latex(det_a)}}} {sp.latex(adjugada)} = {sp.latex(resultado)}",
     ))
+    verificacao = sp.simplify(a * resultado)
+    passos.append(Passo(
+        "Verificar: A · A⁻¹ deve dar a matriz identidade", "",
+        latex=f"A \\, A^{{-1}} = {sp.latex(verificacao)}",
+    ))
     return resultado, passos
 
 
@@ -436,6 +441,11 @@ def eigen(a: sp.Matrix) -> tuple[list, list, list[Passo]]:
             "Substituir este valor de λ e resolver o sistema homogéneo para encontrar v.",
             latex=(f"{sp.latex(matriz_substituida)} \\, v = 0 \\ \\Rightarrow \\ "
                    f"v = {sp.latex(vecs[0])}{rotulo_mult}"),
+        ))
+        v0 = vecs[0]
+        passos.append(Passo(
+            f"Verificar: A·v deve dar λ·v (λ = {sp.latex(valor)})", "",
+            latex=f"A \\, v = {sp.latex(a * v0)} \\ , \\quad \\lambda v = {sp.latex(valor * v0)}",
         ))
     return valores, vetores, passos
 

@@ -14,8 +14,9 @@ from utils.componentes import (
 from utils.simbolico import Passo
 from utils.visualizacao import figura_vetor_parametrizado, figura_vetores_2d, figura_vetores_3d
 
-OPERACOES_2_VETORES = ["Soma", "Produto interno", "Produto externo", "Teste de ortogonalidade"]
-OPERACOES_1_VETOR = ["Norma"]
+OPERACOES_2_VETORES = ["Soma", "Diferença", "Combinação linear", "Produto interno", "Produto externo",
+                        "Teste de ortogonalidade"]
+OPERACOES_1_VETOR = ["Multiplicação por escalar", "Norma"]
 
 CORES = ["#e15759", "#4e79a7", "#59a14f", "#f28e2b", "#b07aa1", "#76b7b2"]
 VALORES_DEFEITO = {"v": np.array([2.0, 1.0]), "w": np.array([1.0, 2.0])}
@@ -79,9 +80,14 @@ def render() -> None:
         operacoes += OPERACOES_1_VETOR
         operacao = st.selectbox("Escolher operação", operacoes)
 
+        k = c1 = c2 = None
         if operacao in OPERACOES_1_VETOR:
             nome_v = st.selectbox("Vetor", nomes, key="vetores_op_nome_unico")
             v, w, nome_w = vetores[nome_v], None, None
+            if operacao == "Multiplicação por escalar":
+                st.markdown("**Escalar k**")
+                k = st.number_input("k", value=2.0, step=0.5, label_visibility="collapsed",
+                                     key="vetores_k_escalar")
         else:
             if len(nomes) < 2:
                 st.warning("Esta operação precisa de pelo menos 2 vetores — adiciona outro acima.")
@@ -92,16 +98,32 @@ def render() -> None:
             with col2:
                 nome_w = st.selectbox("Vetor 2", nomes, index=min(1, len(nomes) - 1), key="vetores_op_nome2")
             v, w = vetores[nome_v], vetores[nome_w]
+            if operacao == "Combinação linear":
+                col_c1, col_c2 = st.columns(2)
+                with col_c1:
+                    c1 = st.number_input(f"Coeficiente de {nome_v}", value=1.0, step=0.5, key="vetores_c1")
+                with col_c2:
+                    c2 = st.number_input(f"Coeficiente de {nome_w}", value=1.0, step=0.5, key="vetores_c2")
 
         latex_v = sp.latex(sp.Matrix(np.round(v, 4).tolist()))
         latex_w = sp.latex(sp.Matrix(np.round(w, 4).tolist())) if w is not None else None
-        simbolo_operacao = {
-            "Soma": f"{latex_v} + {latex_w}",
-            "Produto interno": f"{latex_v} \\cdot {latex_w}",
-            "Produto externo": f"{latex_v} \\times {latex_w}",
-            "Teste de ortogonalidade": f"{latex_v} \\cdot {latex_w}",
-            "Norma": f"\\lVert {latex_v} \\rVert",
-        }[operacao]
+        if operacao == "Soma":
+            simbolo_operacao = f"{latex_v} + {latex_w}"
+        elif operacao == "Diferença":
+            simbolo_operacao = f"{latex_v} - {latex_w}"
+        elif operacao == "Combinação linear":
+            simbolo_operacao = (f"{sp.latex(sp.nsimplify(c1))} \\cdot {latex_v} + "
+                                 f"{sp.latex(sp.nsimplify(c2))} \\cdot {latex_w}")
+        elif operacao == "Multiplicação por escalar":
+            simbolo_operacao = f"{sp.latex(sp.nsimplify(k))} \\cdot {latex_v}"
+        elif operacao == "Produto interno":
+            simbolo_operacao = f"{latex_v} \\cdot {latex_w}"
+        elif operacao == "Produto externo":
+            simbolo_operacao = f"{latex_v} \\times {latex_w}"
+        elif operacao == "Teste de ortogonalidade":
+            simbolo_operacao = f"{latex_v} \\cdot {latex_w}"
+        else:  # Norma
+            simbolo_operacao = f"\\lVert {latex_v} \\rVert"
 
         with st.container(border=True):
             st.markdown("##### 🔎 Operandos escolhidos")
@@ -117,6 +139,30 @@ def render() -> None:
                 passos = [
                     Passo(f"Somar a componente {i + 1}: v_{i + 1} + w_{i + 1}", "",
                           latex=f"{v[i]:g} + {w[i]:g} = {resultado[i]:g}")
+                    for i in range(len(v))
+                ]
+            elif operacao == "Diferença":
+                resultado = v - w
+                st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
+                passos = [
+                    Passo(f"Subtrair a componente {i + 1}: v_{i + 1} - w_{i + 1}", "",
+                          latex=f"{v[i]:g} - {w[i]:g} = {resultado[i]:g}")
+                    for i in range(len(v))
+                ]
+            elif operacao == "Combinação linear":
+                resultado = c1 * v + c2 * w
+                st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
+                passos = [
+                    Passo(f"Calcular a componente {i + 1}: {c1:g}·v_{i + 1} + {c2:g}·w_{i + 1}", "",
+                          latex=f"({c1:g})({v[i]:g}) + ({c2:g})({w[i]:g}) = {resultado[i]:g}")
+                    for i in range(len(v))
+                ]
+            elif operacao == "Multiplicação por escalar":
+                resultado = k * v
+                st.latex(f"{simbolo_operacao} = {sp.latex(sp.Matrix(np.round(resultado, 4).tolist()))}")
+                passos = [
+                    Passo(f"Multiplicar a componente {i + 1} por k", "",
+                          latex=f"({k:g})({v[i]:g}) = {resultado[i]:g}")
                     for i in range(len(v))
                 ]
             elif operacao == "Produto interno":
