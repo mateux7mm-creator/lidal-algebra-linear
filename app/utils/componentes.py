@@ -118,6 +118,12 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
                     st.session_state[chave_versao] += 1
                     st.rerun()
 
+        if st.button("🆔 Identidade", key=f"{chave}_identidade", width="content",
+                      help="Preencher com 1 na diagonal e 0 no resto"):
+            st.session_state[chave_dados] = np.eye(n_linhas, n_colunas)
+            st.session_state[chave_versao] += 1
+            st.rerun()
+
         col_tabela, col_simbolica = st.columns(2)
         with col_tabela:
             df = pd.DataFrame(
