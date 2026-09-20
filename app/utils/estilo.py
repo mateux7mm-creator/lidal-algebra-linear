@@ -105,6 +105,21 @@ div[class*="st-key-pagina_jogos"] div[data-testid="stMetricValue"] {{
 div[class*="st-key-pagina_jogos"] div[data-testid="stMetricLabel"] p {{
     font-size: 0.75rem !important;
 }}
+
+/* Seletor de cor de cada equação (Exploração Gráfica) — o retângulo clicável
+   (stColorPickerBlock) vem grande por omissão; o "width=" do widget só
+   ajusta o contentor à volta, não este bloco em si. */
+div[data-testid="stColorPickerBlock"] {{
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+}}
+div[data-testid="stColorPicker"] {{
+    width: fit-content !important;
+}}
 </style>
 """
 
