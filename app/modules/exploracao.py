@@ -14,7 +14,7 @@ from utils.visualizacao import (
     figura_exploracao_grafica_parametrizada,
 )
 
-EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9"]
+EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9", "y = a*x^2"]
 LIMITE_PARAMETRO = 5.0
 
 
@@ -84,7 +84,7 @@ def render() -> None:
 
     with col_menu, st.container(height=650):
         st.markdown("##### ✏️ Equações")
-        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a·x (com slider para a)")
+        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a*x (com slider para a)")
         for i in range(st.session_state["exploracao_n_eq"]):
             chave, chave_mostrar = f"exploracao_eq_{i}", f"exploracao_eq_mostrar_{i}"
             chave_cor = f"exploracao_eq_cor_{i}"
@@ -122,6 +122,9 @@ def render() -> None:
             if animar:
                 parametro_animado = st.selectbox("Qual parâmetro animar", nomes_parametros,
                                                   key="exploracao_parametro_animado")
+        else:
+            st.caption("💡 Escreve uma letra extra numa equação (ex. \"y = a*x^2\") para "
+                       "ganhares um slider desse parâmetro — e poderes animá-lo.")
 
     valores_parametros = {nome: st.session_state.get(f"exploracao_param_{nome}", 1.0)
                            for nome in nomes_parametros}
