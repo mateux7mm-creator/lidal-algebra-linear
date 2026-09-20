@@ -206,7 +206,7 @@ def modo_leve_ativo() -> bool:
     st.sidebar.markdown(
         """
         <div class="sidebar-header-box">
-            <span class="lab-status-badge">⚡ ONLINE · V2.0</span>
+            <span class="lab-status-badge">⚡ ONLINE · V1.0</span>
             <h3 style="margin-top: 0.4rem; margin-bottom: 0.1rem; font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #1E1B4B;">
                 🧮 Laboratório Interativo
             </h3>

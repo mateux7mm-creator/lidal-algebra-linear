@@ -1,7 +1,7 @@
 """Wrappers Plotly reutilizáveis para os módulos do laboratório.
 
 Cada função devolve uma `go.Figure` já pronta para `st.plotly_chart`, com um
-estilo visual inspirado no GeoGebra (grelha cinzenta clara, eixos escurecidos
+estilo visual inspirado no Gráfico (grelha cinzenta clara, eixos escurecidos
 na origem, escala igual em x/y). Os gráficos são recalculados a cada rerun do
 Streamlit — a interatividade em tempo real vem de campos numéricos com
 setas +/- em vez de animação, por isso não há frames a gerir aqui.
@@ -63,14 +63,14 @@ def _dtick_legivel(largura: float, maximo_ticks: int = 10) -> float:
 
 
 def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
-    """Layout de eixos/grelha ao estilo GeoGebra: grelha cinzenta clara,
+    """Layout de eixos/grelha ao estilo Gráfico: grelha cinzenta clara,
     eixos mais escuros a passar pela origem, fundo branco.
 
     Os números das marcas são escondidos aqui (`showticklabels=False`) e
     substituídos por anotações próprias em `_anotacoes_eixos`, posicionadas
     junto aos eixos que se cruzam (normalmente perto do meio do gráfico),
     não à margem do gráfico como o Plotly faz por omissão — mais parecido
-    com o GeoGebra. `dtick` é fixado ao mesmo valor "redondo" usado para
+    com o Gráfico. `dtick` é fixado ao mesmo valor "redondo" usado para
     gerar essas anotações, para a grelha ficar alinhada com os números.
 
     A legenda fica horizontal, por cima do gráfico (em vez de vertical à
@@ -93,7 +93,7 @@ def _eixos_geogebra(intervalo: tuple[float, float] = (-6, 6)) -> dict:
 
 def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
     """Etiquetas "x"/"y" na ponta de cada eixo + números das marcas junto aos
-    próprios eixos (não à margem do gráfico) — ao estilo GeoGebra.
+    próprios eixos (não à margem do gráfico) — ao estilo Gráfico.
 
     A etiqueta "x" usa `xref="paper"` (sempre a margem direita real do
     gráfico) em vez de `xref="x"` (dados): como `scaleanchor`/`scaleratio`
@@ -107,7 +107,7 @@ def _anotacoes_eixos(intervalo: tuple[float, float]) -> list[dict]:
     (menos que o FATOR_EXTENSAO das retas/malha, para não gerar demasiadas
     anotações), para continuarem a aparecer num zoom-out moderado.
 
-    Cada eixo termina numa seta (estilo GeoGebra), desenhada com o mesmo
+    Cada eixo termina numa seta (estilo Gráfico), desenhada com o mesmo
     truque de anotação usado nos vetores (`showarrow=True, ax/ay` = cauda,
     `x/y` = ponta). A seta do eixo x também usa `xref="paper"` pela mesma
     razão da etiqueta "x": só a coordenada de papel garante a ponta na

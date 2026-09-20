@@ -48,9 +48,9 @@ MODULOS_EXTRAS = [
     (
         "🧭",
         "Exploração Gráfica",
-        "Gráficos interativos de equações no plano cartesiano, interseções e exploração estilo GeoGebra.",
+        "Gráficos interativos de equações no plano cartesiano, interseções e exploração estilo Gráfico.",
         "badge-amber",
-        "GeoGebra 2D",
+        "Gráfico 2D",
     ),
     (
         "🎮",
@@ -82,7 +82,7 @@ def render() -> None:
         """
         <div class="hero-card">
             <div class="lab-badge">
-                <span>🔬 LABORATÓRIO INTERATIVO VIRTUAL</span>
+                <span>🔬 BEM VINDO AO LABORATÓRIO INTERATIVO VIRTUAL</span>
             </div>
             <h1 class="gradient-text" style="font-size: 2.6rem; margin-bottom: 0.2rem;">
                 Laboratório Interativo de Álgebra Linear

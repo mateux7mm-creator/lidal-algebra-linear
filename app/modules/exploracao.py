@@ -1,4 +1,4 @@
-"""Módulo Exploração Gráfica: uma janela de gráficos maior, estilo GeoGebra,
+"""Módulo Exploração Gráfica: uma janela de gráficos maior,
 onde cada equação escrita em texto livre no menu lateral (ex. "y = x^2 - 3",
 "x^2 + y^2 = 9", "2x - y = 1") aparece desenhada na vista principal."""
 from __future__ import annotations

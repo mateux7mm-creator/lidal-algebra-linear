@@ -1,4 +1,4 @@
-"""Interpretação de equações em texto livre (estilo GeoGebra) para a secção
+"""Interpretação de equações em texto livre (estilo Gráfico) para a secção
 de Exploração Gráfica: cada equação escrita pelo utilizador (ex. "y = x^2 - 3",
 "x^2 + y^2 = 9", "2x - y = 1", ou apenas "sin(x)") é convertida num conjunto
 de curvas amostradas, tentando por esta ordem:
@@ -100,7 +100,7 @@ def _analisar_lados(texto: str) -> tuple[sp.Expr, sp.Expr]:
 
 def detetar_parametros(texto: str) -> set[str]:
     """Nomes de símbolos livres na equação que não sejam x/y — tratados como
-    parâmetros com slider (estilo GeoGebra), ex. "a" em "y = a*x^2". Devolve
+    parâmetros com slider (estilo Gráfico), ex. "a" em "y = a*x^2". Devolve
     um conjunto vazio se a equação ainda não for interpretável (o utilizador
     pode estar a meio de a escrever)."""
     try:
