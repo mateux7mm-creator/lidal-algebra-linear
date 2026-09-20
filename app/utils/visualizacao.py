@@ -672,6 +672,27 @@ def figura_transformacao_3d(
 # Exploração Gráfica (equações em texto livre, estilo GeoGebra)
 # --------------------------------------------------------------------------
 
+def _tracos_exploracao(equacoes: list[tuple[str, ResultadoEquacao, str]]) -> list[go.Scatter | go.Contour]:
+    """Traços (sem layout) de uma lista de equações já interpretadas —
+    partilhado entre a versão estática e a animada de `figura_exploracao_grafica`."""
+    tracos = []
+    for rotulo, resultado, cor in equacoes:
+        if resultado.tipo == "implicita":
+            grelha = resultado.grelha
+            tracos.append(go.Contour(
+                x=grelha.x, y=grelha.y, z=grelha.z,
+                contours=dict(start=0, end=0, size=1, coloring="lines"),
+                line=dict(color=cor, width=2.5), showscale=False,
+                name=rotulo, hoverinfo="skip",
+            ))
+        else:
+            for curva in resultado.curvas:
+                tracos.append(go.Scatter(x=curva.x, y=curva.y, mode="lines",
+                                          line=dict(color=cor, width=2.5),
+                                          name=rotulo, hoverinfo="skip"))
+    return tracos
+
+
 def figura_exploracao_grafica(
     equacoes: list[tuple[str, ResultadoEquacao, str]], intervalo: tuple[float, float] = (-10, 10),
     altura: int = 650,
@@ -680,22 +701,31 @@ def figura_exploracao_grafica(
     cada curva explícita como uma linha e cada resultado implícito como um
     contorno de nível 0 — com uma janela maior (altura fixa em pixels) e
     margens reduzidas, para a Exploração Gráfica ocupar o espaço disponível
-    como uma vista GeoGebra."""
-    fig = go.Figure()
-    for rotulo, resultado, cor in equacoes:
-        if resultado.tipo == "implicita":
-            grelha = resultado.grelha
-            fig.add_trace(go.Contour(
-                x=grelha.x, y=grelha.y, z=grelha.z,
-                contours=dict(start=0, end=0, size=1, coloring="lines"),
-                line=dict(color=cor, width=2.5), showscale=False,
-                name=rotulo, hoverinfo="skip",
-            ))
-        else:
-            for curva in resultado.curvas:
-                fig.add_trace(go.Scatter(x=curva.x, y=curva.y, mode="lines",
-                                          line=dict(color=cor, width=2.5),
-                                          name=rotulo, hoverinfo="skip"))
+    como uma vista GeoGebra. A legenda (rótulo de cada equação) fica visível,
+    horizontal, por cima do gráfico — mesmo estilo dos outros módulos."""
+    fig = go.Figure(data=_tracos_exploracao(equacoes))
     fig.update_layout(annotations=_anotacoes_eixos(intervalo), **_eixos_geogebra(intervalo),
-                       height=altura, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
+                       height=altura, margin=dict(l=10, r=10, t=10, b=10), showlegend=True)
+    return fig
+
+
+def figura_exploracao_grafica_parametrizada(
+    calcular_equacoes: Callable[[float], list[tuple[str, ResultadoEquacao, str]]],
+    valores_parametro: np.ndarray,
+    rotulo_parametro: str = "t",
+    intervalo: tuple[float, float] = (-10, 10),
+    altura: int = 650,
+) -> go.Figure:
+    """Versão animada de `figura_exploracao_grafica`: anima UM parâmetro (os
+    restantes ficam fixos — o chamador é quem decide isso dentro de
+    `calcular_equacoes`, tal como em `figura_transformacao_parametrizada`),
+    reaproveitando o slider + ▶ Play/⏸ Pause nativo do Plotly."""
+    fig = go.Figure(
+        data=_tracos_exploracao(calcular_equacoes(valores_parametro[-1])),
+        frames=[go.Frame(data=_tracos_exploracao(calcular_equacoes(p)), name=str(p))
+                for p in valores_parametro],
+    )
+    fig.update_layout(annotations=_anotacoes_eixos(intervalo),
+                       **_layout_com_slider(valores_parametro, rotulo_parametro),
+                       **_eixos_geogebra(intervalo), height=altura, showlegend=True)
     return fig

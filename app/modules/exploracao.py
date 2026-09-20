@@ -3,13 +3,44 @@ onde cada equação escrita em texto livre no menu lateral (ex. "y = x^2 - 3",
 "x^2 + y^2 = 9", "2x - y = 1") aparece desenhada na vista principal."""
 from __future__ import annotations
 
+import numpy as np
 import streamlit as st
 
 from utils.componentes import cabecalho
 from utils.exploracao_grafica import EquacaoInvalida, detetar_parametros, interpretar_e_amostrar
-from utils.visualizacao import CORES_VETORES, figura_exploracao_grafica
+from utils.visualizacao import (
+    CORES_VETORES,
+    figura_exploracao_grafica,
+    figura_exploracao_grafica_parametrizada,
+)
 
 EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9"]
+LIMITE_PARAMETRO = 5.0
+
+
+def _montar_curvas(
+    textos_equacoes: list[str], parametros: dict[str, float], coletar_erros: bool = False,
+) -> tuple[list[tuple[str, object, str]], list[str]]:
+    """Interpreta cada equação visível com os valores de `parametros` dados,
+    devolvendo (curvas, erros) — partilhado entre a vista estática e cada
+    frame da vista animada (que chama isto ~30× por parâmetro, por isso os
+    erros só se recolhem quando pedido, para não repetir o mesmo aviso)."""
+    curvas: list[tuple[str, object, str]] = []
+    erros: list[str] = []
+    for i, texto in enumerate(textos_equacoes):
+        if not st.session_state.get(f"exploracao_eq_mostrar_{i}", True):
+            continue
+        texto = texto.strip()
+        if not texto:
+            continue
+        cor = st.session_state.get(f"exploracao_eq_cor_{i}", CORES_VETORES[i % len(CORES_VETORES)])
+        try:
+            resultado = interpretar_e_amostrar(texto, parametros=parametros)
+            curvas.append((f"Eq. {i + 1}: {texto}", resultado, cor))
+        except EquacaoInvalida as erro:
+            if coletar_erros:
+                erros.append(f"Equação {i + 1} (\"{texto}\"): {erro}")
+    return curvas, erros
 
 
 def _inicializar_estado() -> None:
@@ -76,32 +107,44 @@ def render() -> None:
                        disabled=st.session_state["exploracao_n_eq"] <= 1, key="exploracao_btn_rem")
         st.button("🔄 Repor exemplos", width="stretch", on_click=_repor_exemplos, key="exploracao_btn_reset")
 
+        animar = False
+        parametro_animado = None
         if nomes_parametros:
             st.markdown("##### 🎚️ Parâmetros")
             st.caption("Letras usadas nas equações além de x/y viram sliders (estilo GeoGebra).")
             for nome in nomes_parametros:
                 st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
-                st.slider(nome, min_value=-5.0, max_value=5.0, step=0.1, key=f"exploracao_param_{nome}")
+                st.slider(nome, min_value=-LIMITE_PARAMETRO, max_value=LIMITE_PARAMETRO, step=0.1,
+                           key=f"exploracao_param_{nome}")
+
+            st.markdown("##### 🎬 Animação")
+            animar = st.checkbox("Animar um parâmetro", key="exploracao_animar")
+            if animar:
+                parametro_animado = st.selectbox("Qual parâmetro animar", nomes_parametros,
+                                                  key="exploracao_parametro_animado")
 
     valores_parametros = {nome: st.session_state.get(f"exploracao_param_{nome}", 1.0)
                            for nome in nomes_parametros}
 
     with col_grafico, st.container(height=650):
-        curvas, erros = [], []
-        for i, texto in enumerate(textos_equacoes):
-            if not st.session_state.get(f"exploracao_eq_mostrar_{i}", True):
-                continue
-            texto = texto.strip()
-            if not texto:
-                continue
-            cor = st.session_state.get(f"exploracao_eq_cor_{i}", CORES_VETORES[i % len(CORES_VETORES)])
-            try:
-                resultado = interpretar_e_amostrar(texto, parametros=valores_parametros)
-                curvas.append((f"Eq. {i + 1}: {texto}", resultado, cor))
-            except EquacaoInvalida as erro:
-                erros.append(f"Equação {i + 1} (\"{texto}\"): {erro}")
+        if animar and parametro_animado:
+            def calcular_equacoes(valor, parametro_animado=parametro_animado):
+                parametros_quadro = dict(valores_parametros)
+                parametros_quadro[parametro_animado] = valor
+                curvas_quadro, _ = _montar_curvas(textos_equacoes, parametros_quadro)
+                return curvas_quadro
 
-        st.plotly_chart(figura_exploracao_grafica(curvas), width="stretch", key="exploracao_grafico_principal")
+            st.caption("Arrasta o slider ou carrega em ▶ Play para ver a curva a variar.")
+            valores_animacao = np.linspace(-LIMITE_PARAMETRO, LIMITE_PARAMETRO, 30)
+            fig = figura_exploracao_grafica_parametrizada(
+                calcular_equacoes, valores_animacao, rotulo_parametro=parametro_animado,
+            )
+            _, erros = _montar_curvas(textos_equacoes, valores_parametros, coletar_erros=True)
+        else:
+            curvas, erros = _montar_curvas(textos_equacoes, valores_parametros, coletar_erros=True)
+            fig = figura_exploracao_grafica(curvas)
+
+        st.plotly_chart(fig, width="stretch", key="exploracao_grafico_principal")
 
         for msg in erros:
             st.warning(msg)
