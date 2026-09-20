@@ -14,7 +14,7 @@ from utils.visualizacao import (
     figura_exploracao_grafica_parametrizada,
 )
 
-EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9", "y = a*x^2"]
+EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "x^2 + y^2 = 9"]
 LIMITE_PARAMETRO = 5.0
 
 
@@ -72,6 +72,17 @@ def _repor_exemplos() -> None:
         st.session_state[f"exploracao_eq_cor_{i}"] = CORES_VETORES[i % len(CORES_VETORES)]
 
 
+def _selecionar_animacao(nome_selecionado: str, todos_os_nomes: list[str]) -> None:
+    """Callback do botão "🎬" de cada parâmetro — o Plotly só anima uma
+    dimensão de cada vez, por isso ligar a animação de um parâmetro desliga a
+    dos outros (um grupo tipo "rádio", mas com um botão ao lado de cada
+    slider em vez de um seletor à parte)."""
+    if st.session_state.get(f"exploracao_animar_{nome_selecionado}"):
+        for outro in todos_os_nomes:
+            if outro != nome_selecionado:
+                st.session_state[f"exploracao_animar_{outro}"] = False
+
+
 def render() -> None:
     cabecalho("🧭 Exploração Gráfica")
     _inicializar_estado()
@@ -85,6 +96,7 @@ def render() -> None:
     with col_menu, st.container(height=650):
         st.markdown("##### ✏️ Equações")
         st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a*x (com slider para a)")
+        parametros_mostrados: set[str] = set()
         for i in range(st.session_state["exploracao_n_eq"]):
             chave, chave_mostrar = f"exploracao_eq_{i}", f"exploracao_eq_mostrar_{i}"
             chave_cor = f"exploracao_eq_cor_{i}"
@@ -97,7 +109,27 @@ def render() -> None:
                 st.color_picker("Cor", key=chave_cor, label_visibility="collapsed", width=45)
             with col_mostrar:
                 st.checkbox("Mostrar", key=chave_mostrar)
+
+            # o slider (e o botão de animar) de um parâmetro aparecem logo
+            # abaixo da PRIMEIRA equação que o usa — não numa secção à parte.
+            novos = sorted((detetar_parametros(st.session_state[chave]) & set(nomes_parametros))
+                            - parametros_mostrados)
+            for nome in novos:
+                parametros_mostrados.add(nome)
+                st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
+                st.session_state.setdefault(f"exploracao_animar_{nome}", False)
+                col_slider, col_animar = st.columns([4, 1])
+                with col_slider:
+                    st.slider(f"Parâmetro {nome}", min_value=-LIMITE_PARAMETRO, max_value=LIMITE_PARAMETRO,
+                               step=0.1, key=f"exploracao_param_{nome}")
+                with col_animar:
+                    st.checkbox("🎬", key=f"exploracao_animar_{nome}", help=f"Animar o parâmetro \"{nome}\"",
+                                on_change=_selecionar_animacao, args=(nome, nomes_parametros))
             st.divider()
+
+        if not nomes_parametros:
+            st.caption("💡 Escreve uma letra extra numa equação (ex. \"y = a*x^2\") para "
+                       "ganhares um slider desse parâmetro — e poderes animá-lo.")
 
         col_add, col_rem = st.columns(2)
         with col_add:
@@ -107,24 +139,10 @@ def render() -> None:
                        disabled=st.session_state["exploracao_n_eq"] <= 1, key="exploracao_btn_rem")
         st.button("🔄 Repor exemplos", width="stretch", on_click=_repor_exemplos, key="exploracao_btn_reset")
 
-        animar = False
-        parametro_animado = None
-        if nomes_parametros:
-            st.markdown("##### 🎚️ Parâmetros")
-            st.caption("Letras usadas nas equações além de x/y viram sliders (estilo GeoGebra).")
-            for nome in nomes_parametros:
-                st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
-                st.slider(nome, min_value=-LIMITE_PARAMETRO, max_value=LIMITE_PARAMETRO, step=0.1,
-                           key=f"exploracao_param_{nome}")
-
-            st.markdown("##### 🎬 Animação")
-            animar = st.checkbox("Animar um parâmetro", key="exploracao_animar")
-            if animar:
-                parametro_animado = st.selectbox("Qual parâmetro animar", nomes_parametros,
-                                                  key="exploracao_parametro_animado")
-        else:
-            st.caption("💡 Escreve uma letra extra numa equação (ex. \"y = a*x^2\") para "
-                       "ganhares um slider desse parâmetro — e poderes animá-lo.")
+    parametro_animado = next(
+        (nome for nome in nomes_parametros if st.session_state.get(f"exploracao_animar_{nome}", False)), None,
+    )
+    animar = parametro_animado is not None
 
     valores_parametros = {nome: st.session_state.get(f"exploracao_param_{nome}", 1.0)
                            for nome in nomes_parametros}
