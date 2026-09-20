@@ -79,50 +79,69 @@ def matriz_input(chave: str, linhas: int = 2, colunas: int = 2, titulo: str = "M
     n_linhas, n_colunas = dados.shape
 
     with st.container(border=True):
-        col_titulo, col_botoes = st.columns([3, 2])
-        with col_titulo:
-            st.markdown(f"**{titulo}** · {n_linhas}×{n_colunas}")
+        st.markdown(
+            f"""
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; color: #1E1B4B;">{titulo}</span>
+                    <span class="module-badge badge-indigo" style="font-size: 0.75rem;">{n_linhas}×{n_colunas}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         if permitir_redimensionar and quadrada:
-            with col_botoes:
-                c1, c2 = st.columns(2)
-                if c1.button("➕", key=f"{chave}_add_dim", width="content", help="Aumentar dimensão"):
+            b1, b2, b3 = st.columns([1, 1, 1.2])
+            with b1:
+                if st.button("➕ Dimensão", key=f"{chave}_add_dim", help="Adicionar linha e coluna (+1×1)", width="stretch"):
                     nova = np.vstack([dados, np.zeros((1, n_colunas))])
                     nova = np.hstack([nova, np.zeros((n_linhas + 1, 1))])
                     st.session_state[chave_dados] = nova
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c2.button("➖", key=f"{chave}_rem_dim", width="content", disabled=n_linhas <= 1,
-                              help="Diminuir dimensão"):
+            with b2:
+                if st.button("➖ Dimensão", key=f"{chave}_rem_dim", disabled=n_linhas <= 1, help="Remover linha e coluna (-1×1)", width="stretch"):
                     st.session_state[chave_dados] = dados[:-1, :-1]
                     st.session_state[chave_versao] += 1
                     st.rerun()
+            with b3:
+                if st.button("🆔 Identidade", key=f"{chave}_identidade", help="Preencher diagonal com 1 e o resto com 0", width="stretch"):
+                    st.session_state[chave_dados] = np.eye(n_linhas, n_colunas)
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
         elif permitir_redimensionar:
-            with col_botoes:
-                c1, c2, c3, c4 = st.columns(4)
-                if c1.button("➕L", key=f"{chave}_add_l", width="content", help="Adicionar linha"):
+            b1, b2, b3, b4, b5 = st.columns([1, 1, 1, 1, 1.2])
+            with b1:
+                if st.button("➕ Linha", key=f"{chave}_add_l", help="Adicionar uma nova linha (+ Linha)", width="stretch"):
                     st.session_state[chave_dados] = np.vstack([dados, np.zeros((1, n_colunas))])
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c2.button("➕C", key=f"{chave}_add_c", width="content", help="Adicionar coluna"):
-                    st.session_state[chave_dados] = np.hstack([dados, np.zeros((n_linhas, 1))])
-                    st.session_state[chave_versao] += 1
-                    st.rerun()
-                if c3.button("➖L", key=f"{chave}_rem_l", width="content", disabled=n_linhas <= 1,
-                              help="Remover linha"):
+            with b2:
+                if st.button("➖ Linha", key=f"{chave}_rem_l", disabled=n_linhas <= 1, help="Remover a última linha (- Linha)", width="stretch"):
                     st.session_state[chave_dados] = dados[:-1, :]
                     st.session_state[chave_versao] += 1
                     st.rerun()
-                if c4.button("➖C", key=f"{chave}_rem_c", width="content", disabled=n_colunas <= 1,
-                              help="Remover coluna"):
+            with b3:
+                if st.button("➕ Coluna", key=f"{chave}_add_c", help="Adicionar uma nova coluna (+ Coluna)", width="stretch"):
+                    st.session_state[chave_dados] = np.hstack([dados, np.zeros((n_linhas, 1))])
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+            with b4:
+                if st.button("➖ Coluna", key=f"{chave}_rem_c", disabled=n_colunas <= 1, help="Remover a última coluna (- Coluna)", width="stretch"):
                     st.session_state[chave_dados] = dados[:, :-1]
                     st.session_state[chave_versao] += 1
                     st.rerun()
-
-        if st.button("🆔 Identidade", key=f"{chave}_identidade", width="content",
-                      help="Preencher com 1 na diagonal e 0 no resto"):
-            st.session_state[chave_dados] = np.eye(n_linhas, n_colunas)
-            st.session_state[chave_versao] += 1
-            st.rerun()
+            with b5:
+                if st.button("🆔 Identidade", key=f"{chave}_identidade", help="Preencher como matriz identidade", width="stretch"):
+                    st.session_state[chave_dados] = np.eye(n_linhas, n_colunas)
+                    st.session_state[chave_versao] += 1
+                    st.rerun()
+        else:
+            if st.button("🆔 Identidade", key=f"{chave}_identidade", help="Preencher como matriz identidade"):
+                st.session_state[chave_dados] = np.eye(n_linhas, n_colunas)
+                st.session_state[chave_versao] += 1
+                st.rerun()
 
         col_tabela, col_simbolica = st.columns(2)
         with col_tabela:
@@ -184,8 +203,21 @@ def modo_leve_ativo() -> bool:
     """Cria o toggle de modo leve na sidebar. Chamar UMA ÚNICA VEZ, em streamlit_app.py
     (o widget fica disponível em todas as páginas porque o script de entrada corre sempre).
     Dentro de cada módulo, usar `modo_leve_da_sessao()` para ler o valor sem recriar o widget."""
-    st.sidebar.markdown("### 🧮 Laboratório de Álgebra Linear")
-    st.sidebar.caption("Mestrado em Ensino da Matemática")
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-header-box">
+            <span class="lab-status-badge">⚡ ONLINE · V2.0</span>
+            <h3 style="margin-top: 0.4rem; margin-bottom: 0.1rem; font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #1E1B4B;">
+                🧮 Laboratório Interativo
+            </h3>
+            <p style="font-size: 0.82rem; color: #4F46E5; font-weight: 600; margin-bottom: 0.3rem;">Álgebra Linear Educativa</p>
+            <p style="font-size: 0.73rem; color: #64748B; margin-bottom: 0; line-height: 1.35; font-weight: 500;">
+                Desenvolvido pelo Grupo 8 / UC: Tecnologias Educativas Aplicadas ao Ensino da Matemática - ISCED - Huíla/2026
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.sidebar.divider()
     return st.sidebar.toggle(
         "🐢 Modo leve",

@@ -6,10 +6,10 @@ from utils.componentes import modo_leve_ativo
 from utils.estilo import injetar_css
 
 st.set_page_config(
-    page_title="Laboratório Digital de Álgebra Linear",
+    page_title="Laboratório Interativo de Álgebra Linear",
     page_icon="🧮",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 injetar_css()

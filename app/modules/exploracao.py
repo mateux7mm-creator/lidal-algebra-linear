@@ -14,7 +14,7 @@ from utils.visualizacao import (
     figura_exploracao_grafica_parametrizada,
 )
 
-EXEMPLOS = ["y = x^2 - 3", "y = sin(x)", "2x - y = 1"]
+EXEMPLOS = ["y = x^2 - 3", "y = a*x + 2", "2x - y = 1"]
 EXEMPLOS_MOSTRAR_DEFEITO = [True, True, False]
 LIMITE_PARAMETRO = 5.0
 
@@ -71,6 +71,10 @@ def _repor_exemplos() -> None:
         st.session_state[f"exploracao_eq_{i}"] = eq
         st.session_state[f"exploracao_eq_mostrar_{i}"] = EXEMPLOS_MOSTRAR_DEFEITO[i]
         st.session_state[f"exploracao_eq_cor_{i}"] = CORES_VETORES[i % len(CORES_VETORES)]
+    # Limpar estados de animação para os sliders ficarem ativos por defeito
+    for chave in list(st.session_state.keys()):
+        if chave.startswith("exploracao_animar_"):
+            st.session_state[chave] = False
 
 
 def _selecionar_animacao(nome_selecionado: str, todos_os_nomes: list[str]) -> None:
@@ -96,7 +100,7 @@ def render() -> None:
 
     with col_menu, st.container(height=650):
         st.markdown("##### ✏️ Equações")
-        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  sin(x)  ·  y = a*x (com slider para a)")
+        st.caption("Ex.: y = x^2 - 3  ·  x^2 + y^2 = 9  ·  2x - y = 1  ·  y = a*x + 2 (com slider para a)")
         parametros_mostrados: set[str] = set()
         for i in range(st.session_state["exploracao_n_eq"]):
             chave, chave_mostrar = f"exploracao_eq_{i}", f"exploracao_eq_mostrar_{i}"
@@ -118,26 +122,31 @@ def render() -> None:
             for nome in novos:
                 parametros_mostrados.add(nome)
                 st.session_state.setdefault(f"exploracao_param_{nome}", 1.0)
-                # o primeiro parâmetro que aparece fica já com o controlo
-                # fluido (nativo do Plotly) ligado por omissão — só passa a
-                # False se já houver outro ativo (só um pode estar de cada vez).
-                ja_ha_algum_ativo = any(st.session_state.get(f"exploracao_animar_{outro}", False)
-                                         for outro in nomes_parametros)
-                st.session_state.setdefault(f"exploracao_animar_{nome}", not ja_ha_algum_ativo)
-                a_animar = st.session_state[f"exploracao_animar_{nome}"]
-                col_slider, col_animar = st.columns([4, 1])
+                # Por defeito, a animação fica DESLIGADA (False) para que o slider esteja ativo e movimentável
+                st.session_state.setdefault(f"exploracao_animar_{nome}", False)
+                a_animar = st.session_state.get(f"exploracao_animar_{nome}", False)
+                
+                col_slider, col_animar = st.columns([3.2, 1.8])
                 with col_slider:
-                    # desativado enquanto anima: nesse modo quem manda no
-                    # valor é o slider nativo do Plotly por baixo do gráfico
-                    # (a animação percorre sempre o intervalo todo), por isso
-                    # arrastar este aqui não mudaria nada — evita a confusão.
-                    st.slider(f"Parâmetro {nome}", min_value=-LIMITE_PARAMETRO, max_value=LIMITE_PARAMETRO,
-                               step=0.1, key=f"exploracao_param_{nome}", disabled=a_animar)
+                    st.slider(
+                        f"Parâmetro {nome}",
+                        min_value=-LIMITE_PARAMETRO,
+                        max_value=LIMITE_PARAMETRO,
+                        step=0.1,
+                        key=f"exploracao_param_{nome}",
+                        disabled=a_animar,
+                        help=f"Arrasta para alterar o valor de {nome} em tempo real",
+                    )
                 with col_animar:
-                    st.checkbox("🎬", key=f"exploracao_animar_{nome}", help=f"Animar o parâmetro \"{nome}\"",
-                                on_change=_selecionar_animacao, args=(nome, nomes_parametros))
+                    st.checkbox(
+                        "Animar",
+                        key=f"exploracao_animar_{nome}",
+                        help=f"Ativar/Desativar animação automática para {nome}",
+                        on_change=_selecionar_animacao,
+                        args=(nome, nomes_parametros),
+                    )
                 if a_animar:
-                    st.caption("🎬 A animar — usa o slider por baixo do gráfico.")
+                    st.caption("🎬 Modo Animação ativo — usa os controlos ▶ Play no gráfico.")
             st.divider()
 
         if not nomes_parametros:
