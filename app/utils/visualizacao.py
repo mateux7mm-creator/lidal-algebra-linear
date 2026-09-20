@@ -674,7 +674,11 @@ def figura_transformacao_3d(
 
 def _tracos_exploracao(equacoes: list[tuple[str, ResultadoEquacao, str]]) -> list[go.Scatter | go.Contour]:
     """Traços (sem layout) de uma lista de equações já interpretadas —
-    partilhado entre a versão estática e a animada de `figura_exploracao_grafica`."""
+    partilhado entre a versão estática e a animada de `figura_exploracao_grafica`.
+
+    Uma equação pode dar mais que um traço (ex. um círculo resolve para
+    y = ±√(...), duas curvas) — usa `legendgroup` e só mostra o rótulo na
+    legenda uma vez por equação, para não aparecer repetido."""
     tracos = []
     for rotulo, resultado, cor in equacoes:
         if resultado.tipo == "implicita":
@@ -686,10 +690,11 @@ def _tracos_exploracao(equacoes: list[tuple[str, ResultadoEquacao, str]]) -> lis
                 name=rotulo, hoverinfo="skip",
             ))
         else:
-            for curva in resultado.curvas:
+            for i, curva in enumerate(resultado.curvas):
                 tracos.append(go.Scatter(x=curva.x, y=curva.y, mode="lines",
                                           line=dict(color=cor, width=2.5),
-                                          name=rotulo, hoverinfo="skip"))
+                                          name=rotulo, legendgroup=rotulo,
+                                          showlegend=(i == 0), hoverinfo="skip"))
     return tracos
 
 

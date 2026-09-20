@@ -92,9 +92,9 @@ def render() -> None:
             st.session_state.setdefault(chave_mostrar, True)
             st.session_state.setdefault(chave_cor, CORES_VETORES[i % len(CORES_VETORES)])
             st.text_input(f"Equação {i + 1}", key=chave, placeholder="ex.: y = x^2")
-            col_cor, col_mostrar = st.columns([1, 2])
+            col_cor, col_mostrar = st.columns([1, 3])
             with col_cor:
-                st.color_picker("Cor", key=chave_cor, label_visibility="collapsed")
+                st.color_picker("Cor", key=chave_cor, label_visibility="collapsed", width=45)
             with col_mostrar:
                 st.checkbox("Mostrar", key=chave_mostrar)
             st.divider()
