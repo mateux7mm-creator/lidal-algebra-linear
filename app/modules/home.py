@@ -76,6 +76,11 @@ def _obter_caminho_asset(nome_ficheiro: str) -> str | None:
 
 def render() -> None:
     # ------------------------------------------------------------------
+    # TÍTULO "LIDAL" — centrado, animado, acima do banner hero
+    # ------------------------------------------------------------------
+    st.markdown('<h1 class="lidal-titulo">LIDAL</h1>', unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------
     # BANNER HERO PRINCIPAL (LARGURA TOTAL)
     # ------------------------------------------------------------------
     st.markdown(

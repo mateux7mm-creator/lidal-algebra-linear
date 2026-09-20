@@ -74,6 +74,29 @@ hr {{
 }}
 
 /* --------------------------------------------------------------------
+   Título "LIDAL" — centrado, animado, acima do hero da Início
+   -------------------------------------------------------------------- */
+.lidal-titulo {{
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 3.2rem;
+    letter-spacing: 0.15em;
+    margin: 0.2rem 0 0.6rem 0;
+    background: linear-gradient(90deg, #4F46E5 0%, #06B6D4 45%, #4F46E5 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 6s ease infinite, fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}}
+@media (max-width: 768px) {{
+    .lidal-titulo {{
+        font-size: 2.1rem;
+        letter-spacing: 0.1em;
+    }}
+}}
+
+/* --------------------------------------------------------------------
    Estilos do Hero & Boas-vindas
    -------------------------------------------------------------------- */
 .hero-card {{
