@@ -120,6 +120,52 @@ div[data-testid="stColorPickerBlock"] {{
 div[data-testid="stColorPicker"] {{
     width: fit-content !important;
 }}
+
+/* Boas-vindas na Início (etiqueta pequena acima do título + ilustração) */
+.boas-vindas-etiqueta {{
+    display: inline-block;
+    color: {_PRIMARIA};
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    margin-bottom: -0.4rem;
+}}
+.hero-ilustracao {{
+    max-width: 340px;
+    margin: 0 auto;
+}}
+.hero-ilustracao svg {{
+    width: 100%;
+    height: auto;
+    display: block;
+}}
+
+/* --------------------------------------------------------------------
+   Responsividade — o Streamlit já empilha st.columns sozinho em ecrãs
+   estreitos; aqui só se ajusta densidade/tamanho para esse caso: texto
+   maior não cabe, e as caixas com altura fixa (650px, usadas no layout
+   de 2 colunas de cada módulo) ficam mais baixas para não obrigar a
+   tanto scroll dentro de um ecrã já pequeno.
+   -------------------------------------------------------------------- */
+@media (max-width: 768px) {{
+    h1 {{
+        font-size: 1.6rem !important;
+    }}
+    div[data-testid="stMainBlockContainer"] {{
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }}
+    div[style*="650px"] {{
+        height: 420px !important;
+        max-height: 65vh !important;
+    }}
+    .hero-ilustracao {{
+        max-width: 220px;
+    }}
+    div[class*="st-key-pagina_jogos"] div[data-testid="stVerticalBlockBorderWrapper"] {{
+        padding: 0.4rem 0.6rem !important;
+    }}
+}}
 </style>
 """
 
