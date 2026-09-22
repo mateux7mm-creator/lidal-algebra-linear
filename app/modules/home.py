@@ -1,11 +1,16 @@
 """Ecrã inicial do Laboratório Interativo de Álgebra Linear:
 Boas-vindas, recursos em largura total horizontal, módulos principais e secção extra (jogos, exploração, conteúdo).
 """
-from pathlib import Path
-import streamlit as st
+from pathlib import Path  # para construir o caminho da pasta de imagens de forma independente do sistema operativo
+import streamlit as st  # framework usado para desenhar toda a interface desta página
 
+# pasta "app/assets" (um nível acima de "modules", depois "assets") onde ficam as
+# imagens estáticas (fotos ilustrativas dos módulos) usadas mais abaixo nesta página
 _ASSETS_DIR = Path(__file__).parent.parent / "assets"
 
+# tabela de dados dos 5 módulos de cálculo "principais" — cada tuplo é
+# (ícone, nome, descrição, classe CSS do badge, texto do badge) e é usada
+# para desenhar os cartões da secção "Módulos Interativos Disponíveis"
 MODULOS_PRINCIPAIS = [
     (
         "🔢",
@@ -44,6 +49,8 @@ MODULOS_PRINCIPAIS = [
     ),
 ]
 
+# mesma estrutura (ícone, nome, descrição, classe do badge, texto do badge),
+# mas para os 3 módulos "extra" (não são cálculo puro): gráficos livres, jogos e teoria
 MODULOS_EXTRAS = [
     (
         "🧭",
@@ -70,19 +77,31 @@ MODULOS_EXTRAS = [
 
 
 def _obter_caminho_asset(nome_ficheiro: str) -> str | None:
-    caminho = _ASSETS_DIR / nome_ficheiro
-    return str(caminho) if caminho.exists() else None
+    """Devolve o caminho absoluto (em string) para uma imagem em app/assets/,
+    ou None se o ficheiro não existir — permite à página continuar a funcionar
+    (sem rebentar) mesmo que uma imagem ainda não tenha sido adicionada ao repositório."""
+    caminho = _ASSETS_DIR / nome_ficheiro  # junta a pasta de assets ao nome do ficheiro pedido
+    return str(caminho) if caminho.exists() else None  # só devolve o caminho se o ficheiro realmente existir no disco
 
 
 def render() -> None:
+    """Ponto de entrada desta página: desenha, de cima para baixo, o título
+    LIDAL, o banner hero, os 4 "stat pills", a vitrine de imagens 3D, os
+    cartões dos módulos principais e extra, e a dica final de navegação."""
     # ------------------------------------------------------------------
     # TÍTULO "LIDAL" — centrado, animado, acima do banner hero
     # ------------------------------------------------------------------
+    # <h1> com a classe CSS "lidal-titulo" (definida em utils/estilo.py, com
+    # animação de gradiente de cor) — unsafe_allow_html=True é necessário
+    # porque st.markdown por omissão escaparia a tag <h1>
     st.markdown('<h1 class="lidal-titulo">LIDAL</h1>', unsafe_allow_html=True)
 
     # ------------------------------------------------------------------
     # BANNER HERO PRINCIPAL (LARGURA TOTAL)
     # ------------------------------------------------------------------
+    # cartão de boas-vindas com o nome completo do laboratório, o badge do
+    # grupo/UC e uma frase de apresentação — tudo em HTML/CSS embutido
+    # (classes .hero-card/.lab-badge/.gradient-text/.hero-sub vêm de estilo.py)
     st.markdown(
         """
         <div class="hero-card">
@@ -96,7 +115,7 @@ def render() -> None:
                 Álgebra Linear Educativa · Desenvolvido pelo Grupo 8 / UC: Tecnologias Educativas Aplicadas ao Ensino da Matemática - ISCED - Huíla/2026
             </p>
             <p class="hero-sub" style="margin-top: 0.2rem;">
-                Calcula, visualiza e compreende os conceitos de Álgebra Linear sem "caixa preta" — 
+                Calcula, visualiza e compreende os conceitos de Álgebra Linear sem "caixa preta" —
                 resoluções passo-a-passo detalhadas e animações interativas 2D/3D em tempo real.
             </p>
         </div>
@@ -104,7 +123,7 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)  # espaço vertical extra entre o hero e a secção seguinte
 
     # ------------------------------------------------------------------
     # RECURSOS DO LABORATÓRIO (PREENCHE O ECRÃ INTEIRO NA HORIZONTAL)
@@ -118,8 +137,11 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
+    # 4 colunas de largura igual, uma para cada "stat pill" (cartão pequeno
+    # com ícone + título + legenda) apresentado logo a seguir
     r1, r2, r3, r4 = st.columns(4)
 
+    # cada "with" desenha um cartão .stat-pill dentro da coluna correspondente
     with r1:
         st.markdown(
             """
@@ -176,7 +198,7 @@ def render() -> None:
             unsafe_allow_html=True,
         )
 
-    st.divider()
+    st.divider()  # linha horizontal a separar esta secção da seguinte
 
     # ------------------------------------------------------------------
     # VITRINE DE OBJETOS MATEMÁTICOS EM 3D
@@ -193,13 +215,14 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
+    # 3 colunas iguais, uma por imagem ilustrativa (Matrizes, Vetores, Valores/Vetores Próprios)
     obj_col1, obj_col2, obj_col3 = st.columns(3)
 
     with obj_col1:
-        with st.container(border=True):
-            img_p1 = _obter_caminho_asset("matrix_object_3d.jpg")
-            if img_p1:
-                st.image(img_p1, width="stretch")
+        with st.container(border=True):  # cartão com borda a envolver a imagem + legenda
+            img_p1 = _obter_caminho_asset("matrix_object_3d.jpg")  # tenta localizar a imagem no disco
+            if img_p1:  # só desenha a imagem se o ficheiro realmente existir (evita erro se faltar o asset)
+                st.image(img_p1, width="stretch")  # imagem a ocupar toda a largura da coluna
             st.markdown(
                 """
                 <h5 style="color: #1E1B4B; font-weight: 700; margin-top: 0.4rem;">Matrizes & Espaço Vetorial</h5>
@@ -259,9 +282,12 @@ def render() -> None:
 
     # 3 cartões na primeira linha, 2 cartões na segunda linha (com mesma altura)
     linha1_cols = st.columns(3)
+    # percorre os 3 primeiros módulos de MODULOS_PRINCIPAIS, desenhando um cartão por módulo
     for idx, (icone, nome, descricao, classe_badge, texto_badge) in enumerate(MODULOS_PRINCIPAIS[:3]):
-        with linha1_cols[idx]:
-            with st.container(border=True):
+        with linha1_cols[idx]:  # coloca este cartão na coluna correspondente ao seu índice
+            with st.container(border=True):  # cartão com borda visível (aspeto de "card")
+                # bloco HTML do cartão: ícone + badge no topo, nome do módulo, descrição —
+                # usa f-string porque os valores (icone/nome/descricao/...) vêm do tuplo da lista
                 st.markdown(
                     f"""
                     <div>
@@ -280,9 +306,10 @@ def render() -> None:
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<div style='margin-top: 0.6rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 0.6rem;'></div>", unsafe_allow_html=True)  # pequeno espaço entre as duas linhas de cartões
 
     linha2_cols = st.columns(3)
+    # segunda linha: os restantes módulos de MODULOS_PRINCIPAIS (a partir do 4º)
     for idx, (icone, nome, descricao, classe_badge, texto_badge) in enumerate(MODULOS_PRINCIPAIS[3:]):
         with linha2_cols[idx]:
             with st.container(border=True):
@@ -321,6 +348,7 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
+    # 3 colunas, uma por módulo "extra" (Exploração Gráfica, Jogos e Desafios, Conteúdo)
     extra_cols = st.columns(3)
     for idx, (icone, nome, descricao, classe_badge, texto_badge) in enumerate(MODULOS_EXTRAS):
         with extra_cols[idx]:
@@ -348,12 +376,14 @@ def render() -> None:
     # ------------------------------------------------------------------
     # DICA E GUIA DE UTILIZAÇÃO
     # ------------------------------------------------------------------
+    # caixa de aviso azul nativa do Streamlit, com instruções rápidas de navegação
     st.info(
         "💡 **Como navegar no Laboratório:** Usa o menu lateral esquerdo para alternar entre os módulos. "
         "Dentro de cada módulo, podes ativar o **Modo Passo-a-passo** para veres as resoluções detalhadas "
         "ou ajustar parâmetros nos gráficos interativos."
     )
 
+    # rodapé com o nome do laboratório e a identificação do grupo/UC/instituição
     st.markdown(
         """
         <div style="text-align: center; padding: 1.2rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-top: 1rem;">
@@ -367,5 +397,4 @@ def render() -> None:
         """,
         unsafe_allow_html=True,
     )
-
 

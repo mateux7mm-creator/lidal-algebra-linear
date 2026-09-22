@@ -5,26 +5,27 @@ funções de cálculo já existentes em `simbolico.py` — nunca duplica lógica
 cálculo, só embrulha os valores num enunciado contextualizado (Kwanza,
 geografia angolana) para tornar a prática mais próxima da realidade.
 """
-from __future__ import annotations
+from __future__ import annotations  # permite usar tipos como "list[str]" mesmo em versões mais antigas do Python
 
-import random
-from dataclasses import dataclass, field
-from typing import Literal
+import random  # números/escolhas aleatórias "puros" do Python (não vetorizados)
+from dataclasses import dataclass, field  # cria classes de dados simples (Desafio, DesafioVisual, ...) sem boilerplate
+from typing import Literal  # tipo restrito a um conjunto fixo de valores (ex.: "ponto" ou "direcao")
 
-import numpy as np
-import plotly.graph_objects as go
+import numpy as np  # arrays e álgebra linear numérica (matrizes/vetores aleatórios, det, eig, ...)
+import plotly.graph_objects as go  # tipo de retorno das figuras interativas usadas nos desafios visuais
 
-from utils import simbolico
+from utils import simbolico  # funções de cálculo exato (soma, determinante) reaproveitadas aqui, sem duplicar lógica
 from utils.visualizacao import (
-    camada_clicavel,
-    figura_retas_2d,
-    figura_transformacao_parametrizada,
-    figura_vetores_2d,
-    intervalo_retas,
-    intervalo_transformacao,
-    intervalo_vetores,
+    camada_clicavel,               # camada Plotly "invisível" usada para capturar o clique do utilizador no gráfico
+    figura_retas_2d,                # desenha duas retas (usado no desafio visual de Sistemas)
+    figura_transformacao_parametrizada,  # desenha a grelha transformada por uma matriz (Matrizes/Determinantes/Valores Próprios)
+    figura_vetores_2d,              # desenha vetores no plano (usado no desafio visual de Vetores)
+    intervalo_retas,                # calcula a área/intervalo visível à volta de um conjunto de retas
+    intervalo_transformacao,        # calcula a área/intervalo visível à volta de uma transformação
+    intervalo_vetores,              # calcula a área/intervalo visível à volta de um conjunto de vetores
 )
 
+# cidades angolanas usadas para contextualizar os enunciados dos desafios (torna-os menos abstratos)
 CIDADES = ["Luanda", "Huambo", "Lobito", "Benguela", "Lubango", "Malanje"]
 
 
@@ -32,21 +33,21 @@ CIDADES = ["Luanda", "Huambo", "Lobito", "Benguela", "Lubango", "Malanje"]
 class Desafio:
     """Um desafio de escolha múltipla gerado dinamicamente."""
 
-    pergunta: str
-    opcoes: list[str]
-    indice_correto: int
-    explicacao: str = ""
+    pergunta: str          # texto do enunciado, já com os valores aleatórios embutidos
+    opcoes: list[str]      # lista de respostas possíveis (uma correta + distratores), já baralhada
+    indice_correto: int    # posição (em `opcoes`) da resposta correta, após o baralhamento
+    explicacao: str = ""   # texto mostrado depois de responder, a explicar o raciocínio
 
 
 @dataclass
 class DesafioVisual:
     """Um desafio resolvido clicando num gráfico Plotly."""
 
-    instrucao: str
-    ponto_esperado: tuple[float, float]
-    modo: Literal["ponto", "direcao"] = "ponto"
-    tolerancia: float = 0.6
-    explicacao: str = ""
+    instrucao: str                       # texto que diz ao utilizador onde/o que clicar no gráfico
+    ponto_esperado: tuple[float, float]  # coordenadas (x, y) consideradas a resposta certa
+    modo: Literal["ponto", "direcao"] = "ponto"  # "ponto": compara distância; "direcao": compara ângulo da reta
+    tolerancia: float = 0.6              # margem de erro aceite (distância ou, em "direcao", diferença angular)
+    explicacao: str = ""                 # texto mostrado depois de responder
 
 
 @dataclass
@@ -57,40 +58,47 @@ class DesafioProgressivo:
     (secção 9): "solicitar primeiro o cálculo do determinante e, depois,
     fornecer feedback progressivo", em vez de um quiz de resposta direta."""
 
-    matriz: np.ndarray
-    determinante: float
-    tem_inversa: bool
-    dica: str
-    explicacao: str
+    matriz: np.ndarray      # a matriz A apresentada ao utilizador
+    determinante: float     # det(A), calculado uma única vez e reutilizado nas duas fases
+    tem_inversa: bool       # True se det(A) != 0 (dentro de uma tolerância numérica)
+    dica: str               # fórmula/método sugerido se o utilizador pedir ajuda na fase 1
+    explicacao: str         # texto final, mostrado depois de a fase 2 ser respondida
 
 
 def _matriz_aleatoria(dim: int = 2, minimo: int = -4, maximo: int = 4) -> np.ndarray:
+    # gera uma matriz quadrada dim×dim de inteiros aleatórios (como float, para
+    # ser compatível com as funções de cálculo que esperam arrays de vírgula flutuante)
     return np.random.randint(minimo, maximo + 1, size=(dim, dim)).astype(float)
 
 
 def _vetor_aleatorio(dim: int = 2, minimo: int = -5, maximo: int = 5) -> np.ndarray:
+    # gera um vetor de "dim" inteiros aleatórios, também convertido para float
     return np.random.randint(minimo, maximo + 1, size=dim).astype(float)
 
 
 def _formatar_matriz(m: np.ndarray) -> str:
+    # formata uma matriz numpy como texto "[[a, b], [c, d]]" para usar dentro
+    # do enunciado ou das opções de resposta (sem casas decimais desnecessárias, graças a "g")
     linhas = ["[" + ", ".join(f"{v:g}" for v in linha) + "]" for linha in m]
     return "[" + ", ".join(linhas) + "]"
 
 
 def _opcoes_com_perturbacao(correta: np.ndarray, formatar, n_opcoes: int = 4) -> tuple[list[str], int]:
     """Gera n_opcoes-1 alternativas erradas perturbando a resposta correta, e baralha."""
-    opcoes = [formatar(correta)]
+    opcoes = [formatar(correta)]  # a primeira opção é sempre a resposta certa (antes de baralhar)
     tentativas = 0
+    # tenta até 20 vezes gerar distratores diferentes da resposta certa e entre si
     while len(opcoes) < n_opcoes and tentativas < 20:
         tentativas += 1
+        # perturba a matriz correta com ruído inteiro pequeno, para gerar uma alternativa plausível
         perturbacao = correta + np.random.randint(-3, 4, size=correta.shape)
         texto = formatar(perturbacao)
-        if texto not in opcoes:
+        if texto not in opcoes:  # evita opções repetidas
             opcoes.append(texto)
     indices = list(range(len(opcoes)))
-    random.shuffle(indices)
+    random.shuffle(indices)  # baralha a ordem das opções, para a certa não estar sempre em 1º lugar
     opcoes_baralhadas = [opcoes[i] for i in indices]
-    indice_correto = opcoes_baralhadas.index(opcoes[0])
+    indice_correto = opcoes_baralhadas.index(opcoes[0])  # localiza para onde a resposta certa foi parar
     return opcoes_baralhadas, indice_correto
 
 
@@ -99,10 +107,14 @@ def _opcoes_com_perturbacao(correta: np.ndarray, formatar, n_opcoes: int = 4) ->
 # --------------------------------------------------------------------------
 
 def gerar_desafio_matrizes() -> Desafio:
+    # gera um desafio de escolha múltipla sobre soma de matrizes, com um
+    # enunciado sobre vendas em duas mercearias de uma cidade angolana
     cidade = random.choice(CIDADES)
     a = _matriz_aleatoria(2, -3, 3)
     b = _matriz_aleatoria(2, -3, 3)
     a_sp, b_sp = simbolico.para_sympy(a), simbolico.para_sympy(b)
+    # reaproveita a função de soma já usada no módulo Matrizes — garante que a
+    # resposta do desafio bate sempre certo com o resto da aplicação
     resultado_sp, _ = simbolico.somar_matrizes(a_sp, b_sp)
     resultado = simbolico.para_numpy(resultado_sp)
     opcoes, indice = _opcoes_com_perturbacao(resultado, _formatar_matriz)
@@ -116,11 +128,14 @@ def gerar_desafio_matrizes() -> Desafio:
 
 
 def gerar_desafio_determinantes() -> Desafio:
+    # desafio de escolha múltipla sobre o cálculo do determinante de uma matriz 2×2
     cidade = random.choice(CIDADES)
     a = _matriz_aleatoria(2, -4, 4)
+    # calcula o determinante exato via SymPy (mesma função usada no módulo Determinantes)
     det_sp, _ = simbolico.determinante(simbolico.para_sympy(a))
     correto = float(det_sp)
     opcoes = [f"{correto:g}"]
+    # gera distratores somando pequenos deslocamentos inteiros ao valor correto
     while len(opcoes) < 4:
         candidato = correto + random.choice([-4, -2, -1, 1, 2, 3, 4, 5])
         texto = f"{candidato:g}"
@@ -137,15 +152,20 @@ def gerar_desafio_determinantes() -> Desafio:
 
 
 def gerar_desafio_sistemas() -> Desafio:
+    # desafio de escolha múltipla sobre a interseção de duas retas (sistema 2×2)
     cidade = random.choice(CIDADES)
+    # gera matrizes de coeficientes até encontrar uma não-singular (sistema com solução única)
     while True:
         a = _matriz_aleatoria(2, -3, 3)
         if abs(np.linalg.det(a)) > 1e-6:
             break
     b = _vetor_aleatorio(2, -6, 6)
+    # resolve o sistema numericamente (mais rápido que o caminho simbólico, e
+    # aqui só interessa o valor final, não os passos pedagógicos)
     ponto = np.linalg.solve(a, b)
     correto = f"({ponto[0]:.2g}, {ponto[1]:.2g})"
     opcoes = [correto]
+    # distratores: o ponto correto deslocado por um ruído aleatório contínuo
     while len(opcoes) < 4:
         perturbado = ponto + np.random.uniform(-3, 3, size=2)
         texto = f"({perturbado[0]:.2g}, {perturbado[1]:.2g})"
@@ -163,16 +183,20 @@ def gerar_desafio_sistemas() -> Desafio:
 
 
 def gerar_desafio_valores_proprios() -> Desafio:
+    # desafio de escolha múltipla sobre valores próprios de uma matriz 2×2
     cidade = random.choice(CIDADES)
+    # insiste até obter uma matriz simétrica (a[1,0]=a[0,1]) com valores próprios reais,
+    # para não ter de lidar com números complexos neste quiz
     while True:
         a = _matriz_aleatoria(2, -3, 3)
-        a[1, 0] = a[0, 1]
+        a[1, 0] = a[0, 1]  # força simetria: garante valores próprios sempre reais
         valores = np.linalg.eigvals(a)
-        if np.all(np.abs(valores.imag) < 1e-9):
+        if np.all(np.abs(valores.imag) < 1e-9):  # confirma que a parte imaginária é desprezável
             break
     valores_reais = sorted(float(v.real) for v in valores)
     correto = f"{valores_reais[0]:g} e {valores_reais[1]:g}"
     opcoes = [correto]
+    # distratores: cada valor próprio deslocado por um inteiro pequeno, mantendo o par ordenado
     while len(opcoes) < 4:
         perturbados = sorted(v + random.choice([-3, -2, -1, 1, 2, 3]) for v in valores_reais)
         texto = f"{perturbados[0]:g} e {perturbados[1]:g}"
@@ -189,7 +213,8 @@ def gerar_desafio_valores_proprios() -> Desafio:
 
 
 def gerar_desafio_vetores() -> Desafio:
-    cidade_a, cidade_b = random.sample(CIDADES, 2)
+    # desafio de escolha múltipla sobre produto interno de dois vetores
+    cidade_a, cidade_b = random.sample(CIDADES, 2)  # duas cidades diferentes, sem repetição
     v = _vetor_aleatorio(2, -5, 5)
     w = _vetor_aleatorio(2, -5, 5)
     correto = float(np.dot(v, w))
@@ -215,11 +240,16 @@ def gerar_desafio_vetores() -> Desafio:
 # --------------------------------------------------------------------------
 
 def gerar_desafio_visual_matrizes() -> tuple[DesafioVisual, go.Figure]:
+    # desafio visual: identificar para onde o vetor e1 = (1,0) vai depois de
+    # aplicar a matriz A (a resposta é sempre a 1ª coluna de A)
     a = _matriz_aleatoria(2, -3, 3)
-    while abs(np.linalg.det(a)) < 1e-6:
+    while abs(np.linalg.det(a)) < 1e-6:  # evita matrizes singulares, que achatam o plano numa reta
         a = _matriz_aleatoria(2, -3, 3)
     ponto_esperado = (float(a[0, 0]), float(a[1, 0]))  # A aplicada a e1 = 1ª coluna de A
+    # desenha a transformação já "parada" no estado final (um único valor de parâmetro = 1.0)
     fig = figura_transformacao_parametrizada(calcular_matriz=lambda t: a, valores_parametro=np.array([1.0]))
+    # sobrepõe uma camada transparente e densa de pontos clicáveis, para o
+    # Streamlit conseguir capturar as coordenadas exatas onde o utilizador clicou
     fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
     desafio = DesafioVisual(
         instrucao="A grelha já foi transformada pela matriz A. Clica no ponto para onde o "
@@ -232,10 +262,14 @@ def gerar_desafio_visual_matrizes() -> tuple[DesafioVisual, go.Figure]:
 
 
 def gerar_desafio_visual_determinantes() -> tuple[DesafioVisual, go.Figure]:
+    # desafio visual: identificar o vértice oposto à origem do paralelogramo
+    # formado pelas colunas de A (esse vértice é a soma das duas colunas)
     a = _matriz_aleatoria(2, -3, 3)
     while abs(np.linalg.det(a)) < 1e-6:
         a = _matriz_aleatoria(2, -3, 3)
     vertice = (float(a[0, 0] + a[0, 1]), float(a[1, 0] + a[1, 1]))  # soma das duas colunas
+    # aqui também se pede a área sombreada (mostrar_area=True), que é o próprio
+    # significado geométrico do determinante em valor absoluto
     fig = figura_transformacao_parametrizada(calcular_matriz=lambda t: a, valores_parametro=np.array([1.0]),
                                               mostrar_area=True)
     fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
@@ -250,30 +284,32 @@ def gerar_desafio_visual_determinantes() -> tuple[DesafioVisual, go.Figure]:
 
 
 def gerar_desafio_visual_vetores() -> tuple[DesafioVisual, go.Figure]:
+    # desafio visual: identificar a extremidade do vetor soma v + w
     v = _vetor_aleatorio(2, -4, 4)
     w = _vetor_aleatorio(2, -4, 4)
     soma = v + w
-    vetores_fig = [("v", v, "#e15759"), ("w", w, "#4e79a7")]
+    vetores_fig = [("v", v, "#e15759"), ("w", w, "#4e79a7")]  # (nome, vetor, cor) de cada seta desenhada
     fig = figura_vetores_2d(vetores_fig)
     fig.add_trace(camada_clicavel(intervalo_vetores(vetores_fig)))
     desafio = DesafioVisual(
         instrucao="Clica no ponto onde estaria a extremidade do vetor soma v + w.",
         ponto_esperado=(float(soma[0]), float(soma[1])),
         modo="ponto",
-        tolerancia=0.8,
+        tolerancia=0.8,  # tolerância maior aqui: é mais difícil apontar com precisão a soma visualmente
         explicacao=f"v + w = ({soma[0]:g}, {soma[1]:g}).",
     )
     return desafio, fig
 
 
 def gerar_desafio_visual_sistemas() -> tuple[DesafioVisual, go.Figure]:
+    # desafio visual: identificar o ponto de interseção de duas retas
     while True:
         a = _matriz_aleatoria(2, -3, 3)
-        if abs(np.linalg.det(a)) > 1e-6:
+        if abs(np.linalg.det(a)) > 1e-6:  # garante que as duas retas não são paralelas (solução única)
             break
     b = _vetor_aleatorio(2, -6, 6)
     ponto = np.linalg.solve(a, b)
-    equacoes = [(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])]
+    equacoes = [(a[0, 0], a[0, 1], b[0]), (a[1, 0], a[1, 1], b[1])]  # forma (coef_x, coef_y, termo independente)
     fig = figura_retas_2d(equacoes)
     fig.add_trace(camada_clicavel(intervalo_retas(equacoes)))
     desafio = DesafioVisual(
@@ -286,25 +322,27 @@ def gerar_desafio_visual_sistemas() -> tuple[DesafioVisual, go.Figure]:
 
 
 def gerar_desafio_visual_valores_proprios() -> tuple[DesafioVisual, go.Figure]:
+    # desafio visual: identificar a direção própria associada ao MAIOR valor próprio (em módulo)
     while True:
         a = _matriz_aleatoria(2, -3, 3)
         a[1, 0] = a[0, 1]  # simétrica: garante valores/vetores próprios reais
         valores, vetores = np.linalg.eig(a)
+        # exige valores próprios reais e distintos (senão as duas direções coincidem/confundem-se)
         if np.all(np.abs(valores.imag) < 1e-9) and not np.isclose(valores[0], valores[1]):
             break
-    indice_maior = int(np.argmax(np.abs(valores)))
-    direcao = np.real(vetores[:, indice_maior])
+    indice_maior = int(np.argmax(np.abs(valores)))  # posição do valor próprio de maior valor absoluto
+    direcao = np.real(vetores[:, indice_maior])  # o vetor próprio correspondente (colunas de `vetores`)
     fig = figura_transformacao_parametrizada(
         calcular_matriz=lambda t: a,
         valores_parametro=np.array([1.0]),
-        direcoes_proprias=[np.real(vetores[:, i]) for i in range(2)],
+        direcoes_proprias=[np.real(vetores[:, i]) for i in range(2)],  # desenha as DUAS direções tracejadas
     )
     fig.add_trace(camada_clicavel(intervalo_transformacao([a])))
     desafio = DesafioVisual(
         instrucao="Clica num ponto sobre a linha tracejada que corresponde à direção própria "
                   "do MAIOR valor próprio (em valor absoluto).",
         ponto_esperado=(float(direcao[0]), float(direcao[1])),
-        modo="direcao",
+        modo="direcao",  # aqui compara-se o ÂNGULO da reta, não a distância a um ponto exato
         tolerancia=0.35,
         explicacao=f"O maior valor próprio (em módulo) é λ = {valores[indice_maior]:.2f}, "
                     f"com direção própria ≈ ({direcao[0]:.2f}, {direcao[1]:.2f}).",
@@ -320,24 +358,27 @@ def gerar_desafio_progressivo_inversa(dim: int = 2) -> DesafioProgressivo:
     """Fase 1: calcular det(A). Fase 2: decidir se A tem inversa. Gera
     metade das vezes uma matriz singular e metade não-singular, para o
     "tem inversa?" não ser sempre a mesma resposta."""
-    singular = random.random() < 0.5
+    singular = random.random() < 0.5  # decide, com 50% de probabilidade, se A vai ser singular
     if singular:
+        # constrói uma matriz DELIBERADAMENTE singular: a 2ª linha é um múltiplo da 1ª
         while True:
             a = _matriz_aleatoria(dim, -4, 4)
-            if not np.allclose(a[0], 0):
+            if not np.allclose(a[0], 0):  # evita partir de uma 1ª linha toda a zeros (múltiplo trivial)
                 break
         fator = random.choice([-2, -1, 2, 3])
-        a[1] = fator * a[0]
+        a[1] = fator * a[0]  # força a linha 2 a ser combinação linear da linha 1 → det(A) = 0
         if dim == 3:
-            a[2] = _matriz_aleatoria(1, -4, 4)[0]
+            a[2] = _matriz_aleatoria(1, -4, 4)[0]  # a 3ª linha (se existir) pode ser qualquer coisa
     else:
+        # insiste até obter uma matriz com determinante claramente não-nulo
         while True:
             a = _matriz_aleatoria(dim, -4, 4)
             if abs(np.linalg.det(a)) > 1e-6:
                 break
 
     det = float(np.linalg.det(a))
-    tem_inversa = abs(det) > 1e-6
+    tem_inversa = abs(det) > 1e-6  # tolerância para erros de arredondamento em vírgula flutuante
+    # a dica muda consoante a dimensão: fórmula direta em 2×2, regra de Sarrus em 3×3
     if dim == 2:
         dica = "Para uma matriz 2×2 [[a, b], [c, d]], det(A) = a·d − b·c."
     else:
@@ -349,13 +390,17 @@ def gerar_desafio_progressivo_inversa(dim: int = 2) -> DesafioProgressivo:
 
 
 def verificar_resposta_visual(desafio: DesafioVisual, ponto_clicado: tuple[float, float]) -> bool:
+    # compara o ponto onde o utilizador clicou com o ponto esperado do desafio,
+    # usando o critério (distância ou ângulo) definido em `desafio.modo`
     clicado = np.array(ponto_clicado, dtype=float)
     if desafio.modo == "ponto":
+        # distância euclidiana entre o clique e o ponto esperado, dentro da tolerância
         return float(np.linalg.norm(clicado - np.array(desafio.ponto_esperado))) < desafio.tolerancia
     # modo "direcao": compara o ângulo da linha (mod π, já que uma direção própria é uma reta)
-    if np.linalg.norm(clicado) < 1e-9:
+    if np.linalg.norm(clicado) < 1e-9:  # clique praticamente na origem: sem direção definida, falha
         return False
     angulo_clicado = np.arctan2(clicado[1], clicado[0]) % np.pi
     angulo_esperado = np.arctan2(desafio.ponto_esperado[1], desafio.ponto_esperado[0]) % np.pi
+    # a menor diferença angular entre as duas retas (uma reta e o seu oposto têm o mesmo ângulo mod π)
     diferenca = min(abs(angulo_clicado - angulo_esperado), np.pi - abs(angulo_clicado - angulo_esperado))
     return diferenca < desafio.tolerancia

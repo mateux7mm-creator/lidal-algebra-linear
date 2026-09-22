@@ -33,3 +33,7 @@ dist/
 
 # Dados locais (modo turma)
 data/*.db
+
+# Pasta de trabalho para preparar a entrega ao professor (cópia dos
+# ficheiros já rastreados, não deve duplicar-se dentro do próprio repositório)
+Entrega_Codigo_Fonte/

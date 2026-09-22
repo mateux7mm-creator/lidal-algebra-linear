@@ -1,10 +1,13 @@
 """Ponto de entrada da aplicação: navegação entre os módulos do laboratório."""
-import streamlit as st
+import streamlit as st  # framework web que desenha toda a interface a partir de código Python
 
+# cada módulo expõe uma única função render() com a interface e a lógica desse tópico
 from modules import conteudo, determinantes, exploracao, home, jogos, matrizes, sistemas, valores_proprios, vetores
-from utils.componentes import modo_leve_ativo
-from utils.estilo import injetar_css
+from utils.componentes import modo_leve_ativo  # cria o toggle "Modo leve" na barra lateral (partilhado por todas as páginas)
+from utils.estilo import injetar_css  # injeta o CSS/tema global e o script de gestão da barra lateral
 
+# configuração global da página: título do separador do browser, ícone, largura total
+# e barra lateral fechada por omissão (evita o "flash" azulado ao entrar direto num módulo)
 st.set_page_config(
     page_title="Laboratório Interativo de Álgebra Linear",
     page_icon="🧮",
@@ -12,9 +15,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-injetar_css()
-modo_leve_ativo()
+injetar_css()  # aplica o tema visual (cores, tipos de letra, animações) a toda a app
+modo_leve_ativo()  # desenha o cabeçalho + toggle "Modo leve" na barra lateral, uma única vez
 
+# lista de páginas da navegação: cada st.Page liga um título/ícone/URL à função
+# render() do módulo correspondente; "default=True" faz a Início abrir primeiro
 paginas = [
     st.Page(home.render, title="Início", icon="🏠", url_path="inicio", default=True),
     st.Page(matrizes.render, title="Matrizes", icon="🔢", url_path="matrizes"),
@@ -27,4 +32,4 @@ paginas = [
     st.Page(conteudo.render, title="Conteúdo", icon="📖", url_path="conteudo"),
 ]
 
-st.navigation(paginas).run()
+st.navigation(paginas).run()  # desenha o menu lateral e executa a função render() da página escolhida
