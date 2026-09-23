@@ -45,3 +45,5 @@ docs/manuscrito_ieee/*.out
 docs/manuscrito_ieee/*.fls
 docs/manuscrito_ieee/*.fdb_latexmk
 docs/manuscrito_ieee/*.synctex.gz
+docs/manuscrito_ieee/*.bbl
+docs/manuscrito_ieee/*.blg
