@@ -38,16 +38,6 @@ data/*.db
 # ficheiros já rastreados, não deve duplicar-se dentro do próprio repositório)
 Entrega_Codigo_Fonte/
 
-# Artefactos de compilação do LaTeX (manuscrito IEEE)
-docs/manuscrito_ieee/*.aux
-docs/manuscrito_ieee/*.log
-docs/manuscrito_ieee/*.out
-docs/manuscrito_ieee/*.fls
-docs/manuscrito_ieee/*.fdb_latexmk
-docs/manuscrito_ieee/*.synctex.gz
-docs/manuscrito_ieee/*.bbl
-docs/manuscrito_ieee/*.blg
-
-# Zip pronto a enviar para o Overleaf (gerado a partir dos ficheiros já
-# rastreados acima, não precisa de estar também no repositório)
-docs/manuscrito_ieee/manuscrito_ieee.zip
+# Documentação (manuscrito IEEE, docx técnico, guia do professor) —
+# fica só localmente / no Overleaf, não no repositório público do GitHub
+docs/
