@@ -241,22 +241,22 @@ O sistema encontra-se disponível tanto como aplicação web quanto como execut�
 
 \subsection{Módulos Funcionais e Formalismo Matemático}
 
-\subsubsection{Módulo M1 --- Álgebra de Matrizes}
+\subsubsection{Módulo M1 --- Matrizes}
 Permite a definição de matrizes $A \in \mathbb{M}_{m \times n}(\mathbb{R})$ e $B \in \mathbb{M}_{p \times q}(\mathbb{R})$. Implementa a validação da condição de conformidade de dimensões para a soma ($m=p \wedge n=q$) e para a multiplicação ($n=p$), calculando o produto segundo a fórmula formal:
 \begin{equation}
 c_{ij} = \sum_{k=1}^{n} a_{ik}b_{kj}, \quad i = 1,\dots,m;\; j = 1,\dots,q
 \label{eq:produto}
 \end{equation}
 
-\subsubsection{Módulo M2 --- Determinantes e Interpretação Geométrica}
-Calcula o determinante $\det(A)$ para matrizes quadradas de ordem $n \geq 2$:
+\subsubsection{Módulo M2 --- Determinantes / Inversa (Cálculo do Determinante)}
+Os Módulos M2 e M3 correspondem, na aplicação real, a uma única página --- \textit{Determinantes / Inversa} --- apresentada aqui em duas vertentes matemáticas distintas por clareza expositiva. Calcula o determinante $\det(A)$ para matrizes quadradas de ordem $n \geq 2$:
 \begin{equation}
 \det(A) = \sum_{j=1}^{n} (-1)^{i+j} a_{ij} \det(M_{ij})
 \label{eq:determinante}
 \end{equation}
 Além do valor numérico exacto obtido via SymPy, o sistema renderiza graficamente o paralelogramo formado pelos vectores linha/coluna em $\mathbb{R}^2$, demonstrando que $|\det(A)|$ corresponde à área da figura transformada.
 
-\subsubsection{Módulo M3 --- Inversão de Matrizes}
+\subsubsection{Módulo M3 --- Determinantes / Inversa (Matriz Inversa)}
 Verifica a condição de não-singularidade ($\det(A) \neq 0$). Caso a matriz seja invertível, calcula a matriz adjunta $\mathrm{adj}(A)$ e apresenta a matriz inversa $A^{-1}$:
 \begin{equation}
 A^{-1} = \frac{1}{\det(A)} \mathrm{adj}(A)
@@ -264,7 +264,7 @@ A^{-1} = \frac{1}{\det(A)} \mathrm{adj}(A)
 \end{equation}
 O módulo inclui a verificação algébrica automática do produto $A \cdot A^{-1} = I_n$.
 
-\subsubsection{Módulo M4 --- Sistemas de Equações Lineares}
+\subsubsection{Módulo M4 --- Sistemas Lineares}
 Suporta a resolução do sistema matricial $AX = B$ através da eliminação aplicada à matriz aumentada $[A \mid B]$:
 \begin{equation}
 AX = B \iff
@@ -275,7 +275,7 @@ AX = B \iff
 \end{equation}
 Paralelamente, gera a representação geométrica 2D (rectas concorrentes, paralelas ou coincidentes) ou 3D (intersecção de planos), associando a solução algébrica à posição relativa dos subespaços.
 
-\subsubsection{Módulo M5 --- Geometria Vectorial}
+\subsubsection{Módulo M5 --- Vetores}
 Permite a inserção de vectores $u, v \in \mathbb{R}^2$ ou $\mathbb{R}^3$. Calcula o módulo $\|u\| = \sqrt{\sum u_i^2}$, o produto escalar:
 \begin{equation}
 u \cdot v = \|u\|\|v\|\cos(\theta) = \sum_{i=1}^{n} u_i v_i
@@ -283,7 +283,7 @@ u \cdot v = \|u\|\|v\|\cos(\theta) = \sum_{i=1}^{n} u_i v_i
 \end{equation}
 e gera a representação gráfica vectorial da soma $u+v$ através da regra do paralelogramo, além do produto externo e combinações lineares $c_1 u + c_2 v$.
 
-\subsubsection{Módulo M6 --- Valores e Vectores Próprios}
+\subsubsection{Módulo M6 --- Valores/Vetores Próprios}
 Determina os autovalores $\lambda \in \mathbb{R}$ resolvendo o polinómio característico:
 \begin{equation}
 p(\lambda) = \det(A - \lambda I) = 0
@@ -373,7 +373,7 @@ Previamente à avaliação com estudantes, o sistema foi submetido a um processo
 
 \subsection{Exemplos de Funcionamento}
 
-A título ilustrativo, apresentam-se dois exemplos reais de utilização do sistema. No Módulo M4, introduzindo o sistema de equações $x+y=3$, $x-y=1$ (exemplo pré-carregado por omissão no módulo de Sistemas Lineares), o LIDAL devolve, em simultâneo, a solução exacta $(x,y)=(2,1)$ obtida por eliminação sobre a matriz aumentada, a lista de passos intermédios do cálculo, e o gráfico interactivo das duas rectas com o ponto de intersecção assinalado, permitindo ao estudante verificar visualmente que a solução algébrica corresponde ao ponto de cruzamento geométrico. No Módulo M6, para a matriz diagonal $A = \begin{bmatrix} 2 & 0 \\ 0 & 3 \end{bmatrix}$ (exemplo pré-carregado por omissão no módulo de Valores/Vectores Próprios), o sistema calcula os valores próprios $\lambda_1=2$ e $\lambda_2=3$ com as respectivas direcções próprias alinhadas com os eixos coordenados, e gera uma animação interactiva que interpola entre a matriz identidade e $A$ (parâmetro $t \in [0,1]$ em $M(t)=(1-t)I+tA$), tornando visível o efeito de escala associado a cada valor próprio à medida que a transformação se constrói.
+A título ilustrativo, apresentam-se dois exemplos reais de utilização do sistema. No Módulo M4, introduzindo o sistema de equações $x+y=3$, $x-y=1$ (exemplo pré-carregado por omissão no módulo de Sistemas Lineares), o LIDAL devolve, em simultâneo, a solução exacta $(x,y)=(2,1)$ obtida por eliminação sobre a matriz aumentada, a lista de passos intermédios do cálculo, e o gráfico interactivo das duas rectas com o ponto de intersecção assinalado, permitindo ao estudante verificar visualmente que a solução algébrica corresponde ao ponto de cruzamento geométrico. No Módulo M6, para a matriz diagonal $A = \begin{bmatrix} 2 & 0 \\ 0 & 3 \end{bmatrix}$ (exemplo pré-carregado por omissão no módulo de Valores/Vetores Próprios), o sistema calcula os valores próprios $\lambda_1=2$ e $\lambda_2=3$ com as respectivas direcções próprias alinhadas com os eixos coordenados, e gera uma animação interactiva que interpola entre a matriz identidade e $A$ (parâmetro $t \in [0,1]$ em $M(t)=(1-t)I+tA$), tornando visível o efeito de escala associado a cada valor próprio à medida que a transformação se constrói.
 
 \subsection{Desempenho Académico (Aprendizagem)}
 
