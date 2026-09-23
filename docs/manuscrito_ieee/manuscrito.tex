@@ -176,6 +176,10 @@ O LIDAL estabelece a transição contínua entre o mundo incorporado (gráfico) 
 
 O desenvolvimento da ferramenta alinha-se igualmente com o modelo TPACK (\textit{Technological Pedagogical Content Knowledge}), ao integrar o Conhecimento Tecnológico (programação Python, Streamlit), o Conhecimento Pedagógico (sequência didáctica orientada e \textit{feedback}) e o Conhecimento do Conteúdo (conteúdos programáticos de Álgebra Linear).
 
+\subsection{Gamificação e Feedback Imediato na Aprendizagem}
+
+O módulo de Jogos e Desafios do LIDAL fundamenta-se em dois corpos teóricos complementares. Primeiro, o conceito de \textit{gamificação}, definido por Deterding \textit{et al.} \cite{deterding2011} como a utilização de elementos de \textit{design} de jogos (pontuação, progressão por níveis, desafios de dificuldade crescente) em contextos não lúdicos, com o objectivo de aumentar o envolvimento e a motivação intrínseca dos utilizadores --- princípio operacionalizado nos três modos de jogo do sistema (cronometrado, livre por tópico, e desafios com pistas progressivas). Segundo, a revisão seminal de Hattie e Timperley \cite{hattie2007} sobre o impacto do \textit{feedback} na aprendizagem, que identifica o \textit{feedback} imediato e orientado ao processo (não apenas ao resultado final) como um dos factores de maior efeito no desempenho académico. Esta segunda referência fundamenta directamente o desenho do modo ``Desafio com Pistas'', em que o sistema não revela de imediato se a matriz introduzida tem ou não inversa, solicitando antes o cálculo intermédio do determinante e disponibilizando uma pista processual antes de confirmar a resposta final.
+
 \subsection{Análise Comparativa com Softwares Existentes}
 
 A literatura internacional corrobora as dificuldades estruturais no ensino da Álgebra Linear. Moro \textit{et al.} \cite{moro2016} destacam que a abordagem excessivamente formal afasta os alunos da intuição prática. Singh \textit{et al.} \cite{singh2021} analisaram 20 softwares educacionais voltados para a Álgebra Linear, concluindo que a maioria actua como calculadoras numéricas estáticas desprovidas de acompanhamento didáctico.
@@ -216,6 +220,7 @@ Adoptou-se um desenho de investigação baseado no Estudo de Caso Misto (qualita
 A amostra do estudo foi constituída por $N = 32$ estudantes (18 do sexo masculino e 14 do sexo feminino, com idades compreendidas entre os 18 e os 24 anos) do 1.\textordmasculine{} Ano do curso de Licenciatura em Ensino da Matemática do ISCED-Huíla, no decorrer do ano lectivo de 2026. A participação foi voluntária e antecedida da assinatura do Termo de Consentimento Livre e Esclarecido.
 
 \subsection{Procedimento e Sequência Didáctica}
+\label{sec:seq-didactica}
 
 A intervenção pedagógica decorreu durante 4 semanas (totalizando 16 horas lectivas de laboratório) e seguiu a Sequência Didáctica em 5 Etapas:
 
@@ -238,6 +243,12 @@ O LIDAL foi desenvolvido adoptando uma arquitectura em camadas separadas, garant
 \end{itemize}
 
 O sistema encontra-se disponível tanto como aplicação web quanto como executável autónomo para Windows (empacotado com PyInstaller, biblioteca \textit{onefile}), permitindo a sua utilização offline no ISCED-Huíla sem necessidade de ligação permanente à internet.
+
+\subsection{Justificação das Tecnologias Utilizadas}
+
+A lista de tecnologias sugeridas para este projecto incluía Python, NumPy, SymPy, Matplotlib ou Jupyter Notebook. O LIDAL adopta as três primeiras, mas substitui o par Matplotlib/Jupyter Notebook por Streamlit e Plotly, por razões concretas relacionadas com o público-alvo e com o objectivo pedagógico do sistema. Um caderno Jupyter Notebook, embora adequado para exploração individual por um utilizador já familiarizado com Python, exige que o estudante instale e opere um ambiente de programação --- uma barreira de entrada desadequada ao público-alvo primário (estudantes do 1.\textordmasculine{} ano, muitos sem experiência prévia de programação). O Streamlit resolve esta limitação ao compilar o mesmo código Python numa interface web imediatamente utilizável, sem qualquer conhecimento de programação por parte do utilizador final, mantendo simultaneamente o código-fonte inteiramente em Python (sem exigir HTML, CSS ou JavaScript por parte da equipa de desenvolvimento).
+
+A escolha do Plotly em detrimento do Matplotlib prende-se especificamente com a natureza interactiva exigida pela sequência didáctica \textit{Explorar--Observar--Interpretar--Experimentar--Verificar} (Secção~\ref{sec:seq-didactica}): o Matplotlib produz figuras estáticas, exigindo um novo pedido ao servidor Streamlit (e um novo cálculo em Python) sempre que o utilizador altera um parâmetro; o Plotly, pelo contrário, permite pré-calcular no servidor um conjunto de fotogramas (\textit{frames}) correspondentes a uma gama de valores de um parâmetro, e entregar ao navegador um controlo deslizante e um botão de reprodução automática que animam esses fotogramas inteiramente no lado do cliente, sem qualquer novo pedido ao servidor. Esta arquitectura foi decisiva para tornar viável, sem latência perceptível, a exploração livre de parâmetros pedida na etapa \textit{Explorar} da sequência didáctica --- razão pela qual se prevê, como trabalho futuro (Secção~\ref{sec:conclusao}), construir também uma versão equivalente em Matplotlib, unicamente para fins de comparação técnica objectiva entre as duas abordagens.
 
 \subsection{Módulos Funcionais e Formalismo Matemático}
 
@@ -479,11 +490,16 @@ Os achados empíricos deste estudo confirmam a viabilidade das teorias de Raymon
 
 A comparação com as conclusões de Singh \textit{et al.} \cite{singh2021} reforça que softwares educacionais não devem limitar-se a fornecer respostas prontas; a inclusão de uma sequência didáctica guiada com \textit{feedback} em tempo real revelou-se determinante para a consolidação da aprendizagem.
 
+\subsection{Potencialidades}
+
+Para além dos ganhos de aprendizagem quantificados na Secção~V-C, os resultados evidenciam quatro potencialidades concretas do sistema. Primeiro, a articulação instantânea entre os registos algébrico, numérico e gráfico (Tabela~V, indicador P3: 100\% de concordância) confirma empiricamente, no contexto do ISCED-Huíla, o papel do LIDAL como catalisador de \textit{conversões} semióticas na acepção de Duval \cite{duval1995}. Segundo, a verificação algébrica automática integrada nos Módulos M3 ($A \cdot A^{-1} = I_n$) e M6 ($Av = \lambda v$) torna visível ao estudante, sem esforço adicional, a coerência entre o resultado obtido e a definição formal subjacente --- respondendo directamente à dificuldade, diagnosticada na Secção~I-A, de os estudantes tratarem estas operações como algoritmos sem significado. Terceiro, a arquitectura de fotogramas pré-calculados do Plotly (Secção~IV-B) permite explorar em tempo real toda a gama de um parâmetro sem latência perceptível, tornando praticável, mesmo em ligações mais lentas, a etapa \textit{Explorar} da sequência didáctica. Quarto, a disponibilidade simultânea como aplicação web e como executável autónomo alarga o alcance do sistema a contextos com acesso à internet limitado ou instável, um factor pedagogicamente relevante no panorama educativo angolano.
+
 \subsection{Limitações}
 
 Não obstante os resultados favoráveis, a solução apresenta limitações que devem ser reconhecidas. Do ponto de vista metodológico, o desenho de investigação assentou num único grupo experimental, sem grupo de controlo, e numa amostra reduzida ($N=32$) circunscrita a uma única instituição, o que limita a generalização dos resultados obtidos; estudos futuros deverão contemplar amostras mais amplas e desenhos comparativos com grupo de controlo. Do ponto de vista técnico, a visualização gráfica interactiva dos Módulos M2, M3 e M6 encontra-se actualmente limitada a matrizes de ordem 2 e 3, não sendo suportada a representação geométrica de matrizes de ordem superior, ainda que o cálculo simbólico e numérico permaneça válido para qualquer ordem. O registo de pontuação do modo colaborativo (``modo turma'') do módulo de Jogos e Desafios, quando o sistema é utilizado através do executável autónomo, não é persistido entre execuções, estando limitado à sessão de utilização corrente. Adicionalmente, os tipos de letra utilizados na interface dependem de uma ligação à internet activa, degradando-se de forma graciosa, mas sem preservar integralmente a identidade visual, em contexto totalmente offline. Estas limitações não comprometem a validade dos resultados obtidos, mas delimitam o âmbito de generalização das conclusões e constituem oportunidades concretas de desenvolvimento futuro.
 
 \section{Conclusão e Trabalhos Futuros}
+\label{sec:conclusao}
 
 O projecto LIDAL cumpriu com distinção todos os objectivos traçados, demonstrando que a integração de ferramentas dinâmicas em Python no Ensino Superior promove ganhos significativos no rendimento dos estudantes.
 
