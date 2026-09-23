@@ -146,6 +146,8 @@ Para responder à pergunta de investigação, o presente trabalho fixou como obj
 
 Os objectivos específicos alinham-se da seguinte forma: 1) Implementar módulos computacionais interaccionais para operações fundamentais com matrizes e vectores em $\mathbb{R}^2$ e $\mathbb{R}^3$; 2) Desenvolver ferramentas dinâmicas para o cálculo simbólico e numérico de determinantes e matrizes inversas com verificação de etapas intermédias; 3) Proporcionar a visualização e resolução de sistemas de equações lineares através do método matricial $AX = B$ e representação gráfica de rectas e planos; 4) Construir simuladores gráficos para a transformação linear associada a valores e vectores próprios; 5) Validar empiricamente a usabilidade e a eficácia pedagógica do sistema com estudantes do ISCED-Huíla.
 
+O público-alvo primário do LIDAL são estudantes do 1.\textordmasculine{} ano de cursos de formação inicial de professores de Matemática no Ensino Superior, com particular incidência nos estudantes do curso de Licenciatura em Ensino da Matemática do ISCED-Huíla. Secundariamente, o sistema destina-se também a docentes de Álgebra Linear que pretendam utilizá-lo como recurso de apoio à leccionação, quer em sala de aula (\textit{modo turma}), quer como material de estudo autónomo recomendado aos estudantes.
+
 \subsection{Importância e Contribuição}
 
 As principais contribuições deste projecto residem na disponibilização de um protótipo funcional de software educacional, tanto em versão web como em executável autónomo para uso offline, na formulação de uma sequência didáctica guiada em 5 etapas com \textit{feedback} imediato, e na produção de evidências empíricas sobre a integração das tecnologias no Ensino Superior em Angola.
@@ -218,6 +220,10 @@ A amostra do estudo foi constituída por $N = 32$ estudantes (18 do sexo masculi
 A intervenção pedagógica decorreu durante 4 semanas (totalizando 16 horas lectivas de laboratório) e seguiu a Sequência Didáctica em 5 Etapas:
 
 1) \textbf{Explorar}: Entrada livre de matrizes e vectores pelos estudantes para geração de hipóteses; 2) \textbf{Observar}: Análise visual imediata dos gráficos e resultados numéricos no ecrã; 3) \textbf{Interpretar}: Leitura do passo a passo explicativo e do embasamento teórico formal; 4) \textbf{Experimentar}: Teste de situações limite (ex.: matrizes singulares, vectores ortogonais); 5) \textbf{Verificar}: Resolução de desafios propostos pelo sistema com validação em tempo real.
+
+\subsection{Metodologia de Desenvolvimento do Sistema}
+
+Do ponto de vista da engenharia de software, o LIDAL foi construído seguindo uma abordagem incremental: cada funcionalidade foi implementada, integrada e validada isoladamente antes de se avançar para a seguinte, em vez de se deixar a integração para uma fase final única. O código-fonte foi mantido sob controlo de versões (Git), com um histórico granular de alterações, e cada alteração funcional foi acompanhada da execução da suite de testes automatizados descrita na Secção~\ref{sec:testes}, funcionando como mecanismo de validação contínua e prevenindo a introdução de regressões ao longo do período de desenvolvimento de 15 dias.
 
 \section{Concepção e Implementação}
 
@@ -361,8 +367,13 @@ def calcular_autovalores_gui(matriz_data):
 \section{Resultados e Avaliação}
 
 \subsection{Testes e Verificação Funcional do Sistema}
+\label{sec:testes}
 
 Previamente à avaliação com estudantes, o sistema foi submetido a um processo de verificação funcional automatizada, através de uma suite de aproximadamente 40 scripts de teste construídos com o \textit{framework} \texttt{streamlit.testing.v1.AppTest}. Os testes cobrem a totalidade dos módulos funcionais (M1--M6) e complementares, verificando: a ausência de excepções em tempo de execução em cada página da aplicação; a correcção dos resultados numéricos e simbólicos face a casos de referência conhecidos (por exemplo, determinantes, matrizes inversas e valores próprios de matrizes-padrão com solução analítica trivial); e o comportamento correcto da interface perante entradas inválidas ou limite (dimensões incompatíveis, matrizes singulares, sistemas indeterminados ou impossíveis). Esta suite foi executada após cada alteração ao longo do desenvolvimento incremental do sistema, funcionando como mecanismo de regressão contínua e garantindo a estabilidade funcional do produto entregue.
+
+\subsection{Exemplos de Funcionamento}
+
+A título ilustrativo, apresentam-se dois exemplos reais de utilização do sistema. No Módulo M4, introduzindo o sistema de equações $x+y=3$, $x-y=1$ (exemplo pré-carregado por omissão no módulo de Sistemas Lineares), o LIDAL devolve, em simultâneo, a solução exacta $(x,y)=(2,1)$ obtida por eliminação sobre a matriz aumentada, a lista de passos intermédios do cálculo, e o gráfico interactivo das duas rectas com o ponto de intersecção assinalado, permitindo ao estudante verificar visualmente que a solução algébrica corresponde ao ponto de cruzamento geométrico. No Módulo M6, para a matriz diagonal $A = \begin{bmatrix} 2 & 0 \\ 0 & 3 \end{bmatrix}$ (exemplo pré-carregado por omissão no módulo de Valores/Vectores Próprios), o sistema calcula os valores próprios $\lambda_1=2$ e $\lambda_2=3$ com as respectivas direcções próprias alinhadas com os eixos coordenados, e gera uma animação interactiva que interpola entre a matriz identidade e $A$ (parâmetro $t \in [0,1]$ em $M(t)=(1-t)I+tA$), tornando visível o efeito de escala associado a cada valor próprio à medida que a transformação se constrói.
 
 \subsection{Desempenho Académico (Aprendizagem)}
 
