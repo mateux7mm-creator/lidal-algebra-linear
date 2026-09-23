@@ -37,3 +37,11 @@ data/*.db
 # Pasta de trabalho para preparar a entrega ao professor (cópia dos
 # ficheiros já rastreados, não deve duplicar-se dentro do próprio repositório)
 Entrega_Codigo_Fonte/
+
+# Artefactos de compilação do LaTeX (manuscrito IEEE)
+docs/manuscrito_ieee/*.aux
+docs/manuscrito_ieee/*.log
+docs/manuscrito_ieee/*.out
+docs/manuscrito_ieee/*.fls
+docs/manuscrito_ieee/*.fdb_latexmk
+docs/manuscrito_ieee/*.synctex.gz

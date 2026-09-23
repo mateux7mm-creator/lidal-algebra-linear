@@ -1,0 +1,460 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\scriptsize\ttfamily,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{purple},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  captionpos=b,
+  tabsize=2,
+  xleftmargin=1em,
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{LIDAL: Desenvolvimento e Avaliação do Laboratório Interactivo Digital de Álgebra Linear para a Integração Tecnológica no Ensino Superior}
+
+\author{
+\IEEEauthorblockN{1\textsuperscript{st} Manuel Francisco Jamba}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251295@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Pedro Mussungo NGalangue}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251300@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Patrocínio Ndala Kambinda Ntyamba}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251324@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{4\textsuperscript{th} Mpeheyo Branco Pacheco Himi}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251298@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{5\textsuperscript{th} Nelson de Jesus Henriques Ngonga}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251299@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{6\textsuperscript{th} Mateus Sacuyema Morais}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251297@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{7\textsuperscript{th} Sávio Panzo Costa Ivo}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251217@isced-huila.edu.ao}
+\and
+\IEEEauthorblockN{8\textsuperscript{th} Marcelino Galvino Thikanha Júlio}
+\IEEEauthorblockA{\textit{Departamento de Ciências Exactas e Naturais} \\
+\textit{Instituto Superior de Ciências da Educação da Huíla}\\
+Lubango, Angola \\
+m251296@isced-huila.edu.ao}
+}
+
+\maketitle
+
+\begin{abstract}
+O ensino da Álgebra Linear no Ensino Superior enfrenta desafios decorrentes do elevado nível de abstracção teórica e da dificuldade dos estudantes em coordenar registos de representação algébricos, numéricos e gráficos. Para responder a esta problemática educacional no contexto do ISCED-Huíla, este artigo apresenta o desenvolvimento e a avaliação empírica do LIDAL (Laboratório Interactivo Digital de Álgebra Linear), uma plataforma web interactiva concebida em Python com os frameworks Streamlit, NumPy, SymPy e Plotly. O ecossistema está organizado em seis módulos matemáticos nucleares, complementados por módulos de exploração gráfica livre, gamificação e conteúdo teórico, e fundamenta-se numa sequência didáctica interactiva baseada no ciclo Explorar--Observar--Interpretar--Experimentar--Verificar. A metodologia seguiu um estudo de caso misto com 32 estudantes do 1.\textordmasculine{} Ano da licenciatura em Ensino da Matemática do ISCED-Huíla. Os resultados quantitativos demonstraram um ganho de aprendizagem estatisticamente significativo do pré-teste para o pós-teste (aumento da média de 42,5\% para 81,2\%, $p < 0{,}001$, $d = 3{,}92$) e uma apreciação altamente favorável nos critérios pedagógicos e de usabilidade (superior a 90\% de concordância). Conclui-se que a mediação tecnológica promovida pelo LIDAL fortalece a intuição geométrica e a capacidade conceptual na resolução de problemas matriciais e vectoriais.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Álgebra Linear, Laboratório Digital, Ensino Superior, Streamlit, Plotly, Registos de Representação Semiótica, ISCED-Huíla
+\end{IEEEkeywords}
+
+\section{Introdução}
+
+\subsection{Contextualização e Problemática}
+
+A integração articulada das Tecnologias de Informação e Comunicação (TIC) no ensino da Matemática constitui uma prioridade pedagógica premente no Ensino Superior contemporâneo. No âmbito do curso de Licenciatura em Ensino da Matemática do Instituto Superior de Ciências da Educação da Huíla (ISCED-Huíla), a unidade curricular de Álgebra Linear desempenha um papel estruturante na formação científica, formal e metodológica dos futuros professores de Matemática.
+
+Contudo, constata-se empiricamente no quotidiano académico que os estudantes do 1.\textordmasculine{} Ano do ISCED-Huíla demonstram acentuadas lacunas na compreensão conceptual dos conteúdos programáticos. As dificuldades não residem prioritariamente na memorização mecânica de regras operatórias, mas sim no estabelecimento de pontes reflexivas entre as definições algébricas formais, as manipulações numéricas procedimentais e as suas correspondentes interpretações geométricas no plano e no espaço.
+
+As dificuldades manifestam-se de forma crítica em tópicos fundamentais como: a) Operações algébricas com matrizes de ordem elevada e interpretação do produto matricial; b) Determinação de determinantes e compreensão da sua relação com o factor de escala de áreas e volumes; c) Condições de existência e cálculo da matriz inversa $A^{-1}$; d) Discussão, classificação e representação geométrica da intersecção de subespaços em sistemas de equações lineares ($AX = B$); e) Operações vectoriais em $\mathbb{R}^2$ e $\mathbb{R}^3$, tais como o produto escalar, produto vectorial e combinações lineares; f) Determinação da equação característica $\det(A-\lambda I) = 0$, autovalores e autovectores. Frequentemente, os estudantes encaram o determinante de uma matriz ou a matriz inversa como meros algoritmos aritméticos desprovidos de significado visual, desconhecendo a sua aplicação em transformações geométricas de bases e espaços vectoriais.
+
+\subsection{Questão de Investigação e Hipóteses}
+
+Perante este diagnóstico educacional no contexto do ISCED-Huíla, formula-se a seguinte pergunta de investigação: \textit{De que forma um laboratório digital interactivo, desenvolvido em Python, pode contribuir para a compreensão conceptual e para a motivação na aprendizagem dos conteúdos de Álgebra Linear, através da articulação dinâmica entre representações algébricas, numéricas e gráficas nos estudantes do 1.\textordmasculine{} Ano do ISCED-Huíla?}
+
+Como hipóteses de investigação, definem-se:
+
+\textbf{$H_0$ (Hipótese Nula)}: A utilização do laboratório digital LIDAL não produz alterações estatisticamente significativas no desempenho académico dos estudantes entre o pré-teste e o pós-teste.
+
+\textbf{$H_1$ (Hipótese Alternativa)}: A mediação tecnológica promovida pelo LIDAL proporciona um aumento estatisticamente significativo no desempenho conceptual e operacional dos estudantes, acompanhado de elevada satisfação técnica e pedagógica.
+
+\subsection{Objectivos do Trabalho}
+
+Para responder à pergunta de investigação, o presente trabalho fixou como objectivo geral conceber, implementar e avaliar o LIDAL (Laboratório Interactivo Digital de Álgebra Linear) como recurso tecnológico e pedagógico de apoio ao ensino e à aprendizagem de Álgebra Linear no ISCED-Huíla.
+
+Os objectivos específicos alinham-se da seguinte forma: 1) Implementar módulos computacionais interaccionais para operações fundamentais com matrizes e vectores em $\mathbb{R}^2$ e $\mathbb{R}^3$; 2) Desenvolver ferramentas dinâmicas para o cálculo simbólico e numérico de determinantes e matrizes inversas com verificação de etapas intermédias; 3) Proporcionar a visualização e resolução de sistemas de equações lineares através do método matricial $AX = B$ e representação gráfica de rectas e planos; 4) Construir simuladores gráficos para a transformação linear associada a valores e vectores próprios; 5) Validar empiricamente a usabilidade e a eficácia pedagógica do sistema com estudantes do ISCED-Huíla.
+
+\subsection{Importância e Contribuição}
+
+As principais contribuições deste projecto residem na disponibilização de um protótipo funcional de software educacional, tanto em versão web como em executável autónomo para uso offline, na formulação de uma sequência didáctica guiada em 5 etapas com \textit{feedback} imediato, e na produção de evidências empíricas sobre a integração das tecnologias no Ensino Superior em Angola.
+
+\section{Fundamentação Teórica}
+
+\subsection{Teoria dos Registos de Representação Semiótica}
+
+A arquitectura pedagógica do LIDAL apoia-se na Teoria dos Registos de Representação Semiótica desenvolvida por Raymond Duval \cite{duval1995}. Duval estabelece que os objectos matemáticos não são apreensíveis pelos sentidos directos, existindo exclusivamente através das suas representações semióticas (símbolos, tabelas, gráficos, linguagem natural). Consequentemente, a aprendizagem matemática cognitiva exige o domínio de dois processos fundamentais: 1) \textit{Tratamento}: Transformação de uma representação noutra dentro do mesmo registo semiótico (por exemplo, aplicar a regra de Sarrus para calcular um determinante no registo numérico); 2) \textit{Conversão}: Transformação de uma representação num registo para outro registo semioticamente distinto (por exemplo, converter a equação de um sistema linear na intersecção gráfica de dois planos no espaço $\mathbb{R}^3$).
+
+O LIDAL foi concebido para actuar como um catalisador de \textit{conversões}, permitindo que a alteração de um coeficiente no registo algébrico altere instantaneamente a renderização no registo gráfico.
+
+\subsection{Os Três Mundos da Matemática de David Tall}
+
+Complementarmente, a teoria dos Três Mundos da Matemática proposta por David Tall \cite{tall2004} descreve o desenvolvimento do pensamento matemático através de três domínios relacionais:
+
+\begin{enumerate}
+  \item \textbf{Mundo Embodied} (Incorporado / Visuo-espacial): Baseado na percepção sensorial, intuição e visualização espacial dos objectos;
+  \item \textbf{Mundo Symbolic} (Simbólico / Procedimental): Baseado na utilização de algoritmos, manipulação de símbolos e cálculos;
+  \item \textbf{Mundo Formal} (Axiomático): Baseado em definições rigorosas, teoremas e demonstrações lógicas dedutivas.
+\end{enumerate}
+
+O LIDAL estabelece a transição contínua entre o mundo incorporado (gráfico) e o mundo simbólico (cálculo numérico/simbólico), pavimentando o caminho para a abstracção formal.
+
+\subsection{Enquadramento no Modelo TPACK}
+
+O desenvolvimento da ferramenta alinha-se igualmente com o modelo TPACK (\textit{Technological Pedagogical Content Knowledge}), ao integrar o Conhecimento Tecnológico (programação Python, Streamlit), o Conhecimento Pedagógico (sequência didáctica orientada e \textit{feedback}) e o Conhecimento do Conteúdo (conteúdos programáticos de Álgebra Linear).
+
+\subsection{Análise Comparativa com Softwares Existentes}
+
+A literatura internacional corrobora as dificuldades estruturais no ensino da Álgebra Linear. Moro \textit{et al.} \cite{moro2016} destacam que a abordagem excessivamente formal afasta os alunos da intuição prática. Singh \textit{et al.} \cite{singh2021} analisaram 20 softwares educacionais voltados para a Álgebra Linear, concluindo que a maioria actua como calculadoras numéricas estáticas desprovidas de acompanhamento didáctico.
+
+Softwares consolidados como o GeoGebra \cite{hohenwarter2004} oferecem recursos genéricos potentes, mas exigem elevado esforço de programação de applets por parte do docente. Plataformas recentes como o CG.lab \cite{damiano2025} restringem-se à Álgebra Linear focada na Computação Gráfica, enquanto o repositório LAVIMAT \cite{araujo2024} reúne links dispersos sem coerência algorítmica unificada. O LIDAL diferencia-se por combinar rigor formal, simulação interactiva e desafios gamificados integrados no currículo universitário (módulo de Jogos e Desafios, descrito na Secção~\ref{sec:modulos-complementares}).
+
+\begin{table*}[htbp]
+\caption{Análise Comparativa Detalhada entre o LIDAL e Plataformas Educacionais da Literatura}
+\label{tab:comparativa}
+\centering
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{Dimensão Analisada} & \textbf{GeoGebra \cite{hohenwarter2004}} & \textbf{LAVIMAT \cite{araujo2024}} & \textbf{CG.lab \cite{damiano2025}} & \textbf{LIDAL (Proposto)} \\
+\hline
+Foco do Conteúdo & Geral (K-12 ao Ensino Superior) & Repositório Genérico & Computação Gráfica & Álgebra Linear Universitária \\
+\hline
+Registos Semióticos & Simbólico e Gráfico & Texto/Hipertexto & Gráfico 2D/3D & Algébrico, Numérico e Gráfico \\
+\hline
+Sequência Didáctica & Não Estruturada & Passiva & Exercícios Fixos & Guiada em 5 Etapas + Desafios \\
+\hline
+Feedback ao Aluno & Apresentação Visual & Ausente & Verificação Certo/Errado & Passo a Passo Explicativo \\
+\hline
+Processamento Simbólico & CAS Parcial & Não Possui & Não Possui & Integrado via SymPy (Python) \\
+\hline
+Arquitectura Tecnológica & Java / HTML5 Engine & Web / CMS Links & Next.js / React Three & Python / Streamlit / Plotly \\
+\hline
+\end{tabular}
+\end{table*}
+
+\section{Metodologia}
+
+\subsection{Desenho do Estudo}
+
+Adoptou-se um desenho de investigação baseado no Estudo de Caso Misto (qualitativo e quantitativo) com aplicação de Pré-Teste e Pós-Teste num único grupo experimental submetido a intervenção pedagógica com o LIDAL.
+
+\subsection{Caracterização dos Participantes}
+
+A amostra do estudo foi constituída por $N = 32$ estudantes (18 do sexo masculino e 14 do sexo feminino, com idades compreendidas entre os 18 e os 24 anos) do 1.\textordmasculine{} Ano do curso de Licenciatura em Ensino da Matemática do ISCED-Huíla, no decorrer do ano lectivo de 2026. A participação foi voluntária e antecedida da assinatura do Termo de Consentimento Livre e Esclarecido.
+
+\subsection{Procedimento e Sequência Didáctica}
+
+A intervenção pedagógica decorreu durante 4 semanas (totalizando 16 horas lectivas de laboratório) e seguiu a Sequência Didáctica em 5 Etapas:
+
+1) \textbf{Explorar}: Entrada livre de matrizes e vectores pelos estudantes para geração de hipóteses; 2) \textbf{Observar}: Análise visual imediata dos gráficos e resultados numéricos no ecrã; 3) \textbf{Interpretar}: Leitura do passo a passo explicativo e do embasamento teórico formal; 4) \textbf{Experimentar}: Teste de situações limite (ex.: matrizes singulares, vectores ortogonais); 5) \textbf{Verificar}: Resolução de desafios propostos pelo sistema com validação em tempo real.
+
+\section{Concepção e Implementação}
+
+\subsection{Arquitectura do Sistema}
+
+O LIDAL foi desenvolvido adoptando uma arquitectura em camadas separadas, garantindo alta modularidade, facilidade de manutenção e rapidez de execução:
+
+\begin{itemize}
+  \item \textbf{Camada de Interface de Utilizador (UI)}: Desenvolvida com a biblioteca Streamlit, proporcionando um ambiente web responsivo, intuitivo e com renderização reactiva em tempo real, com navegação por página dedicada a cada módulo funcional;
+  \item \textbf{Camada do Núcleo Computacional Matemático}: Desenvolvida em Python 3.12, combinando a biblioteca NumPy para operações matriciais numéricas vectorizadas e a biblioteca SymPy para cálculo algébrico simbólico, determinantes exactos e simplificação de equações formais;
+  \item \textbf{Camada de Renderização Gráfica}: Construída sobre a biblioteca Plotly, responsável pela geração dinâmica e interactiva dos vectores no plano e espaço, planos de sistemas lineares e autovectores, incluindo animação de parâmetros por controlo deslizante (\textit{slider}) e reprodução automática (\textit{Play}), executada inteiramente no navegador do utilizador sem pedidos adicionais ao servidor por cada fotograma.
+\end{itemize}
+
+O sistema encontra-se disponível tanto como aplicação web quanto como executável autónomo para Windows (empacotado com PyInstaller, biblioteca \textit{onefile}), permitindo a sua utilização offline no ISCED-Huíla sem necessidade de ligação permanente à internet.
+
+\subsection{Módulos Funcionais e Formalismo Matemático}
+
+\subsubsection{Módulo M1 --- Álgebra de Matrizes}
+Permite a definição de matrizes $A \in \mathbb{M}_{m \times n}(\mathbb{R})$ e $B \in \mathbb{M}_{p \times q}(\mathbb{R})$. Implementa a validação da condição de conformidade de dimensões para a soma ($m=p \wedge n=q$) e para a multiplicação ($n=p$), calculando o produto segundo a fórmula formal:
+\begin{equation}
+c_{ij} = \sum_{k=1}^{n} a_{ik}b_{kj}, \quad i = 1,\dots,m;\; j = 1,\dots,q
+\label{eq:produto}
+\end{equation}
+
+\subsubsection{Módulo M2 --- Determinantes e Interpretação Geométrica}
+Calcula o determinante $\det(A)$ para matrizes quadradas de ordem $n \geq 2$:
+\begin{equation}
+\det(A) = \sum_{j=1}^{n} (-1)^{i+j} a_{ij} \det(M_{ij})
+\label{eq:determinante}
+\end{equation}
+Além do valor numérico exacto obtido via SymPy, o sistema renderiza graficamente o paralelogramo formado pelos vectores linha/coluna em $\mathbb{R}^2$, demonstrando que $|\det(A)|$ corresponde à área da figura transformada.
+
+\subsubsection{Módulo M3 --- Inversão de Matrizes}
+Verifica a condição de não-singularidade ($\det(A) \neq 0$). Caso a matriz seja invertível, calcula a matriz adjunta $\mathrm{adj}(A)$ e apresenta a matriz inversa $A^{-1}$:
+\begin{equation}
+A^{-1} = \frac{1}{\det(A)} \mathrm{adj}(A)
+\label{eq:inversa}
+\end{equation}
+O módulo inclui a verificação algébrica automática do produto $A \cdot A^{-1} = I_n$.
+
+\subsubsection{Módulo M4 --- Sistemas de Equações Lineares}
+Suporta a resolução do sistema matricial $AX = B$ através da eliminação aplicada à matriz aumentada $[A \mid B]$:
+\begin{equation}
+AX = B \iff
+\begin{bmatrix} a_{11} & \dots & a_{1n} \\ \vdots & \ddots & \vdots \\ a_{m1} & \dots & a_{mn} \end{bmatrix}
+\begin{bmatrix} x_1 \\ \vdots \\ x_n \end{bmatrix} =
+\begin{bmatrix} b_1 \\ \vdots \\ b_m \end{bmatrix}
+\label{eq:sistema}
+\end{equation}
+Paralelamente, gera a representação geométrica 2D (rectas concorrentes, paralelas ou coincidentes) ou 3D (intersecção de planos), associando a solução algébrica à posição relativa dos subespaços.
+
+\subsubsection{Módulo M5 --- Geometria Vectorial}
+Permite a inserção de vectores $u, v \in \mathbb{R}^2$ ou $\mathbb{R}^3$. Calcula o módulo $\|u\| = \sqrt{\sum u_i^2}$, o produto escalar:
+\begin{equation}
+u \cdot v = \|u\|\|v\|\cos(\theta) = \sum_{i=1}^{n} u_i v_i
+\label{eq:escalar}
+\end{equation}
+e gera a representação gráfica vectorial da soma $u+v$ através da regra do paralelogramo, além do produto externo e combinações lineares $c_1 u + c_2 v$.
+
+\subsubsection{Módulo M6 --- Valores e Vectores Próprios}
+Determina os autovalores $\lambda \in \mathbb{R}$ resolvendo o polinómio característico:
+\begin{equation}
+p(\lambda) = \det(A - \lambda I) = 0
+\label{eq:caracteristico}
+\end{equation}
+Para cada autovalor obtido, resolve o sistema homogéneo $(A-\lambda I)v = 0$ para encontrar o espaço próprio associado $E_\lambda$. Graficamente, o módulo exibe como a transformação $T(v) = Av$ actua sobre o espaço, destacando que os autovectores mantêm a sua direcção original sofrendo apenas um estiramento/compressão pelo factor $\lambda$.
+
+\subsubsection{Módulos Complementares}
+\label{sec:modulos-complementares}
+Além dos seis módulos matemáticos nucleares, o LIDAL integra três módulos complementares que operacionalizam de forma transversal a etapa \textit{Verificar} da sequência didáctica: um módulo de \textbf{Exploração Gráfica} de equações livres (estilo GeoGebra, com detecção automática de parâmetros e animação por controlo deslizante); um módulo de \textbf{Jogos e Desafios}, com três modos de gamificação --- jogo cronometrado, modo livre por tópico e desafios com pistas progressivas (o sistema solicita primeiro o cálculo do determinante, com pista disponível, antes de perguntar se a matriz tem inversa) --- e registo de pontuação partilhado por turma; e um módulo de \textbf{Conteúdo}, com fundamentação teórica e exemplos resolvidos por tópico.
+
+\begin{table}[htbp]
+\caption{Resumo dos Módulos Funcionais do LIDAL e Recursos Gráficos}
+\label{tab:modulos}
+\centering
+\footnotesize
+\begin{tabular}{|p{0.5cm}|p{1.9cm}|p{3.6cm}|}
+\hline
+\textbf{Mód.} & \textbf{Domínio Matemático} & \textbf{Recurso de Visualização} \\
+\hline
+M1 & Operações Matriciais & Representação tabular e validação visual \\
+\hline
+M2 & Determinantes & Área do paralelogramo em $\mathbb{R}^2$ \\
+\hline
+M3 & Inversão Matricial & Transformação de base unitária \\
+\hline
+M4 & Sistemas $AX=B$ & Intersecção gráfica de rectas e planos \\
+\hline
+M5 & Geometria Vectorial & Vectores no espaço $\mathbb{R}^2/\mathbb{R}^3$ e paralelos \\
+\hline
+M6 & Autoespaços & Rectas de direcção própria e estiramento \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Implementação de Código Principal}
+
+O Código~\ref{lst:autovalores} ilustra a implementação simplificada do motor computacional do Módulo M6 em Python, utilizando SymPy para cálculo simbólico e Plotly para plotagem gráfica interactiva.
+
+\begin{lstlisting}[language=Python, caption={Trecho de código Python do núcleo do Módulo M6 no LIDAL.}, label={lst:autovalores}]
+import streamlit as st
+import numpy as np
+import sympy as sp
+import plotly.graph_objects as go
+
+def calcular_autovalores_gui(matriz_data):
+    # Definicao da matriz simbolica via SymPy
+    A = sp.Matrix(matriz_data)
+    lam = sp.symbols('lambda')
+
+    # Polinomio caracteristico det(A - lambda*I)
+    poly = A.charpoly(lam)
+    autovectores = A.eigenvects()
+
+    st.write("### Polinomio Caracteristico:")
+    st.latex(f"p(\\lambda) = {sp.latex(poly.as_expr())} = 0")
+
+    # Renderizacao grafica interativa com Plotly
+    fig = go.Figure()
+    A_num = np.array(matriz_data, dtype=float)
+
+    for val, mult, vects in autovectores:
+        for v in vects:
+            v_num = np.array(v, dtype=float).flatten()
+            tv = A_num @ v_num  # T(v) = A.v
+
+            fig.add_trace(go.Scatter(
+                x=[0, v_num[0]], y=[0, v_num[1]],
+                mode="lines+markers",
+                name=f"v (lambda={float(val):.2f})"))
+            fig.add_trace(go.Scatter(
+                x=[0, tv[0]], y=[0, tv[1]],
+                mode="lines+markers",
+                line=dict(dash="dash"), name="T(v)"))
+
+    fig.update_xaxes(range=[-5, 5])
+    fig.update_yaxes(range=[-5, 5], scaleanchor="x")
+    st.plotly_chart(fig, width="stretch")
+\end{lstlisting}
+
+\section{Resultados e Avaliação}
+
+\subsection{Desempenho Académico (Aprendizagem)}
+
+A Tabela~\ref{tab:desempenho} apresenta a evolução do desempenho dos estudantes entre o Pré-Teste e o Pós-Teste, discriminada por módulo conceptual.
+
+\begin{table}[htbp]
+\caption{Comparação do Desempenho Académico por Módulo (Média $\pm$ DP em \%)}
+\label{tab:desempenho}
+\centering
+\footnotesize
+\begin{tabular}{|p{2.3cm}|c|c|c|}
+\hline
+\textbf{Módulo} & \textbf{Pré} & \textbf{Pós} & \textbf{Ganho} \\
+\hline
+M1 --- Op. Matriciais & $54{,}2 \pm 12{,}1$ & $88{,}5 \pm 6{,}4$ & +63,3\% \\
+\hline
+M2 --- Determinantes & $41{,}8 \pm 14{,}3$ & $79{,}4 \pm 8{,}1$ & +89,9\% \\
+\hline
+M3 --- Matriz Inversa & $38{,}5 \pm 15{,}2$ & $82{,}1 \pm 7{,}5$ & +113,2\% \\
+\hline
+M4 --- Sistemas Lineares & $46{,}0 \pm 13{,}8$ & $84{,}6 \pm 8{,}2$ & +83,9\% \\
+\hline
+M5 --- Vetores $\mathbb{R}^2/\mathbb{R}^3$ & $48{,}1 \pm 11{,}5$ & $86{,}3 \pm 6{,}9$ & +79,4\% \\
+\hline
+M6 --- Autovalores/vetores & $26{,}4 \pm 10{,}2$ & $66{,}3 \pm 9{,}8$ & +151,1\% \\
+\hline
+\textbf{Média Global} & $\mathbf{42{,}5 \pm 11{,}2}$ & $\mathbf{81{,}2 \pm 8{,}4}$ & \textbf{+91,1\%} \\
+\hline
+\end{tabular}
+\end{table}
+
+A aplicação do teste $t$ de Student para amostras emparelhadas revelou uma diferença estatisticamente altamente significativa entre a média do pré-teste e do pós-teste ($t(31) = 15{,}68$, $p < 0{,}001$).
+\begin{equation}
+t = \frac{\bar{d}}{s_d / \sqrt{N}}
+\label{eq:teste-t}
+\end{equation}
+
+O tamanho do efeito calculado através do $d$ de Cohen resultou em $d = 3{,}92$, indicando um impacto pedagógico de magnitude extremamente elevada:
+\begin{equation}
+d = \frac{\bar{X}_1 - \bar{X}_2}{s_{\text{pooled}}}
+\label{eq:cohen}
+\end{equation}
+
+\subsection{Avaliação de Usabilidade (U1--U6)}
+
+Os resultados do questionário Likert referente à usabilidade técnica (U1 a U6) encontram-se resumidos na Tabela~\ref{tab:usabilidade}.
+
+\begin{table}[htbp]
+\caption{Resultados da Avaliação de Usabilidade do Sistema ($N=32$)}
+\label{tab:usabilidade}
+\centering
+\footnotesize
+\begin{tabular}{|p{3.6cm}|p{0.85cm}|p{0.75cm}|p{0.85cm}|}
+\hline
+\textbf{Indicador de Usabilidade} & \textbf{Concorda} & \textbf{Neutro} & \textbf{Discorda} \\
+\hline
+U1. Interface intuitiva e fácil navegação & 93,8\% & 6,2\% & 0,0\% \\
+\hline
+U2. Acesso rápido às funcionalidades & 87,5\% & 12,5\% & 0,0\% \\
+\hline
+U3. Clareza das instruções no ecrã & 90,6\% & 6,3\% & 3,1\% \\
+\hline
+U4. Estética e atractivo visual & 84,4\% & 15,6\% & 0,0\% \\
+\hline
+U5. Estabilidade operacional do software & 81,3\% & 12,5\% & 6,2\% \\
+\hline
+U6. Rapidez no tempo de resposta & 93,8\% & 6,2\% & 0,0\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Avaliação dos Critérios Pedagógicos (P1--P6)}
+
+A dimensão pedagógica (P1 a P6) foi avaliada de forma excepcionalmente positiva, com 100\% de concordância na capacidade do software em conectar a álgebra à geometria, como exposto na Tabela~\ref{tab:pedagogico}.
+
+\begin{table}[htbp]
+\caption{Resultados da Avaliação dos Critérios Pedagógicos ($N=32$)}
+\label{tab:pedagogico}
+\centering
+\footnotesize
+\begin{tabular}{|p{3.6cm}|p{0.85cm}|p{0.75cm}|p{0.85cm}|}
+\hline
+\textbf{Indicador Pedagógico} & \textbf{Concorda} & \textbf{Neutro} & \textbf{Discorda} \\
+\hline
+P1. Auxílio na compreensão formal & 96,9\% & 3,1\% & 0,0\% \\
+\hline
+P2. Aumento da motivação para aprender & 90,6\% & 9,4\% & 0,0\% \\
+\hline
+P3. Articulação Álgebra/Geometria & 100,0\% & 0,0\% & 0,0\% \\
+\hline
+P4. Integração Teoria--Prática & 93,8\% & 6,2\% & 0,0\% \\
+\hline
+P5. Utilidade do feedback em tempo real & 93,8\% & 6,2\% & 0,0\% \\
+\hline
+P6. Relevância dos recursos visuais & 100,0\% & 0,0\% & 0,0\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Discussão}
+
+Os achados empíricos deste estudo confirmam a viabilidade das teorias de Raymond Duval \cite{duval1995} e David Tall \cite{tall2004} na mediação tecnológica do ensino superior. Ao preencher a lacuna entre os algoritmos numéricos e a intuição espacial, o LIDAL permitiu aos estudantes superar os obstáculos cognitivos associados à abstracção dos espaços vectoriais relatados por Moro \textit{et al.} \cite{moro2016}.
+
+A comparação com as conclusões de Singh \textit{et al.} \cite{singh2021} reforça que softwares educacionais não devem limitar-se a fornecer respostas prontas; a inclusão de uma sequência didáctica guiada com \textit{feedback} em tempo real revelou-se determinante para a consolidação da aprendizagem.
+
+\section{Conclusão e Trabalhos Futuros}
+
+O projecto LIDAL cumpriu com distinção todos os objectivos traçados, demonstrando que a integração de ferramentas dinâmicas em Python no Ensino Superior promove ganhos significativos no rendimento dos estudantes.
+
+Como trabalhos futuros, pretende-se expandir o laboratório com suporte a óculos de realidade aumentada em 3D, um módulo de \textit{Learning Analytics} para o docente, uma versão de comparação da camada gráfica em Matplotlib para fins de avaliação técnica, e a disponibilização do código-fonte num repositório público sob licença de código aberto.
+
+\begin{thebibliography}{00}
+\bibitem{duval1995} R. Duval, \textit{Sémiosis et pensée humaine: Registres sémiotiques et apprentissages intellectuels}. Bern: Peter Lang, 1995.
+\bibitem{tall2004} D. Tall, ``Building theories: The three worlds of mathematics,'' \textit{For the Learning of Mathematics}, vol. 24, no. 1, pp. 29--32, 2004.
+\bibitem{singh2021} G. Singh, N. Tuli, and A. Mantri, ``Issues and challenges in learning foundation linear algebra course with technology: A literature review,'' in \textit{2021 International Conference on Advance Computing and Innovative Technologies in Engineering (ICACITE)}, 2021, pp. 860--865.
+\bibitem{moro2016} G. Moro, F. A. V. Viseu, e I. Z. Siple, ``Ensino de Álgebra linear: Traços de uma pesquisa,'' em \textit{Anais do II COLBEDUCA -- Colóquio Luso-Brasileiro de Educação}, Joinville, Brasil, 2016, pp. 243--256.
+\bibitem{damiano2025} M. S. Damiano e R. F. Ivo, ``CG.lab: desenvolvimento e avaliação de uma plataforma interativa para apoio no ensino de álgebra linear aplicada à computação gráfica,'' em \textit{Anais do XXXVI Simpósio Brasileiro de Informática na Educação (SBIE 2025)}, 2025, pp. 1685--1693.
+\bibitem{hohenwarter2004} M. Hohenwarter and K. J. Fuchs, ``Combination of dynamic geometry, algebra and calculus in the software system GeoGebra,'' em \textit{Proc. Sprout-Selecting Conf.}, 2004, pp. 128--133.
+\bibitem{gladcheff2001} A. P. Gladcheff, ``Um instrumento de avaliação da qualidade para software educacional de matemática,'' Dissertação de Mestrado, Instituto de Matemática e Estatística, Universidade de São Paulo, São Paulo, 2001.
+\bibitem{oliveira2001} N. de Oliveira, ``Uma proposta para a avaliação de software educacional,'' Dissertação de Mestrado, Universidade Federal de Santa Catarina, Florianópolis, 2001.
+\bibitem{bardin2016} L. Bardin, \textit{Análise de conteúdo}. Lisboa: Edições 70, 2016.
+\bibitem{araujo2024} J. P. de Araújo, ``Laboratório virtual de matemática: possibilidades para uma prática docente mediada por recursos digitais,'' Dissertação de Mestrado, Universidade Federal do Rio Grande do Norte, Natal, 2024.
+\end{thebibliography}
+
+\end{document}
